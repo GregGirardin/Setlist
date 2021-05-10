@@ -45,52 +45,19 @@
   font-size: 10px;
 }
 
-.dropbtn
-{
-  background-color: grey;
-  color: white;
-  padding: 5px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
 .dropbtn:hover
 {
   background-color: brown;
 }
 
-.dropdown
+.setClass
 {
-  position: relative;
-  display: inline-block;
-  font-size: 15px;
-  padding: 0px;
+  border: 2px solid white;
+  background-color: #ddf;
+  color: #000;
+  padding: 6px;
   text-align: center;
-}
-
-.dropdown-content
-{
-  display: none;
-  position: absolute;
-  background-color: rgb( 229, 226, 226 );
-  overflow: auto;
-  box-shadow: 0px 8px 16px 0px rgba( 0, 0, 0, 0.2 );
-  z-index: 999;
-}
-
-.dropdown-content a
-{
-  color: black;
-  padding: 2px;
-  text-decoration: none;
-  display: block;
-  min-width: 50;
-  font-size: 14px;
-}
-
-.dropdown a:hover
-{
-  background-color: #ccc;
+  font-size: 16px;
 }
 
 .menu
@@ -149,7 +116,7 @@
 <button class='menuButton' id='saveSetButton'   onclick='saveSetList();'>Save</button>
 <button class='menuButton' id='exportSetButton' onclick='exportSet();'>Export</button>
 <hr>
-<button class='modeButton' onclick='changeMode( this, MODE_INSERT );'>Insert</button>
+<button class='modeButton' onclick='changeMode( this, MODE_ADD );'>Add</button>
 <button class='modeButton' onclick='changeMode( this, MODE_DELETE );'>Delete</button>
 <button class='modeButton' onclick='changeMode( this, MODE_MOVE );'>Move</button>
 
@@ -165,16 +132,16 @@ var debugFlag = true;
 var curSet, curSong; // The cursor for various operations
 var editedFlag = false;
 // Constants.
-const MODE_INSERT = 0;
-const MODE_DELETE = 1;
-const MODE_MOVE   = 2;
-const MODE_EDIT   = 3;
+const MODE_NONE   = 0;
+const MODE_ADD    = 1;
+const MODE_DELETE = 2;
+const MODE_MOVE   = 3;
 
 const SET_RENAME  = 0;
 const SET_INSERT  = 1;
 const SET_DELETE  = 2;
 
-var operationMode = MODE_EDIT;
+var operationMode = MODE_NONE;
 
 window.onload = setListInit;
 
@@ -245,6 +212,8 @@ function randInt( min, max ) { return Math.floor( Math.random() * ( max - min ) 
 
 //////////////////////////// //////////////////////////// ////////////////////////////
 //////////////////////////// //////////////////////////// ////////////////////////////
+//////////////////////////// //////////////////////////// ////////////////////////////
+//////////////////////////// //////////////////////////// ////////////////////////////
 
 function getCurrentElement()
 {
@@ -283,19 +252,27 @@ function slClick( setIndex, songIndex )
 
   editedFlag = true;
 
-  if( operationMode == MODE_INSERT ) // what we click on becomes the insertion point.
+  if( operationMode == MODE_ADD ) // what we click on becomes the insertion point.
   {
     curSet = setIndex; // set the cursor
     curSong = songIndex;
   }
-  else if( operationMode == MODE_DELETE ) // Delete the song we click on.
-    curSetlist.sets[ setIndex ].songs.splice( songIx, 1 );
+  else if( operationMode == MODE_DELETE )
+  {
+    if( songIndex == undefined )
+      curSetlist.sets.splice( setIndex, 1 );
+    else
+      curSetlist.sets[ setIndex ].songs.splice( songIndex, 1 );
+  }
   else if( operationMode == MODE_MOVE ) 
   {
-    if( curSet == undefined ) // First click highlights.
+    if( curSet == undefined ) // First click highlights the song we want to move
     {
-      curSet = setIndex;
-      curSong = songIndex;
+      if( songIndex != -1 )
+      {
+        curSet = setIndex;
+        curSong = songIndex;
+      }
     }
     else // This is the 2nd click.
     {
@@ -324,48 +301,41 @@ function slClick( setIndex, songIndex )
         {
           if( setIndex == curSet ) // moving within the same set
           {
-            if( songIndex < curSong ) // moved song up
+            if( songIndex == -1 ) // clicked on the +
+              songIndex = curSetlist.sets[ setIndex ].songs.length - 1;
+            if( songIndex != undefined )
             {
-              curSetlist.sets[ setIndex ].songs.splice( songIndex, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
-              curSetlist.sets[ curSet ].songs.splice( curSong + 1, 1 );
-            }
-            else
-            {
-              curSetlist.sets[ setIndex ].songs.splice( songIndex + 1, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
-              curSetlist.sets[ curSet ].songs.splice( curSong, 1 );
+              if( songIndex < curSong ) // moved song up
+              {
+                curSetlist.sets[ setIndex ].songs.splice( songIndex, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
+                curSetlist.sets[ curSet ].songs.splice( curSong + 1, 1 );
+              }
+              else
+              {
+                curSetlist.sets[ setIndex ].songs.splice( songIndex + 1, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
+                curSetlist.sets[ curSet ].songs.splice( curSong, 1 );
+              }
             }
           }
           else
           {
-            curSetlist.sets[ setIndex ].songs.splice( songIndex, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
-            curSetlist.sets[ curSet ].songs.splice( curSong, 1 );
+            if( songIndex == -1 ) // clicked on the +
+              songIndex = curSetlist.sets[ setIndex ].songs.length;
+            if( songIndex != undefined )
+            {
+              curSetlist.sets[ setIndex ].songs.splice( songIndex, 0, curSetlist.sets[ curSet ].songs[ curSong ] );
+              curSetlist.sets[ curSet ].songs.splice( curSong, 1 );
+            }
           }
         }
         curSet = undefined;
         curSong = undefined;
       }
-
     }
 
-
   }
-  else if( operationMode == MODE_EDIT )
-  {
-    if( songIndex == undefined )
-    {
-      var elem = document.getElementById( 'setMenu' + setIndex );
-      var menuSet = elem.classList.contains( 'menu' );
-
-      /* Close dropdowns. */
-      var ds = document.getElementsByClassName( "dropdown-content" );
-      for( var i = 0;i < ds.length;i++ )
-        ds[ i ].classList.remove( 'menu' );
-
-      if( !menuSet )
-        elem.classList.add( 'menu' );
-    }
-    return; // don't want to regenerate HTML
-  }
+  else if( songIndex == undefined )
+      setRename( setIndex );
 
   generateSetlistHTML(); 
 }
@@ -373,9 +343,9 @@ function slClick( setIndex, songIndex )
 // clicking on a library song should add the song at the current cursor position
 function libSongClick( songId )
 {
-  if( debugFlag ) console.log( songId + " " + curSet + " " + curSong );
+  //if( debugFlag ) console.log( songId + " " + curSet + " " + curSong );
 
-  if( operationMode == MODE_INSERT ) // what we click on becomes the insertion point.
+  if( operationMode == MODE_ADD )
     if( curSet != undefined )
     {
       var libSong = songLibrary[ songId ];
@@ -396,64 +366,47 @@ function libSongClick( songId )
     }
 }
 
-function setOperation( operation, setIndex )
+function setRename( setIndex )
 {
-  if( debugFlag ) console.log( "setOperation " + operation + setIndex );
-
-  switch( operation )
+  var name = prompt( "Enter Set Name:", curSetlist.sets[ setIndex ].name );
+  if( name )
   {
-    case SET_RENAME:
-      var name = prompt( "Enter Set Name:", curSetlist.sets[ setIndex ].name );
-      if( name )
-      {
-        curSetlist.sets[ setIndex ].name = name;
-        var elem = document.getElementById( "setListSet." + setIndex );
-        elem.innerHTML = name;
-      }
-      break;
-
-    case SET_INSERT:
-      newSet = new Set();
-      curSetlist.sets.splice( setIndex, 0, newSet );
-      break;
-
-    case SET_DELETE:
-      if( curSetlist.sets.length > 1 )
-        curSetlist.sets.splice( setIndex, 1 );
-      else
-        alert( "Can't delete last set." );
-      break;
-
-    case SET_DUP:
-      break;
+    curSetlist.sets[ setIndex ].name = name;
+    var elem = document.getElementById( "setListSet." + setIndex );
+    elem.innerHTML = name;
   }
 
   generateSetlistHTML();
 }
 
+function setAdd()
+{
+  curSetlist.sets.push( new Set() );
+  generateSetlistHTML();
+}
+
+//////////////////////////////
 function generateSetlistHTML()
 {
-  var tmpHtml = "";
+  var tempHtml = "";
   for( var i = 0;i < curSetlist.sets.length;i++ )
   {
     var s = curSetlist.sets[ i ];
 
-    tmpHtml += "<div class='dropdown'> \n\
-                 <button id='setListSet." + i + "' class='dropbtn' onclick='slClick( " + i + ", undefined )'>" + s.name + "</button> \n\
-                 <div id='setMenu" + i + "' class='dropdown-content'>             \n\
-                   <a onclick='setOperation( SET_RENAME," + i + ")'>Rename</a>    \n\
-                   <a onclick='setOperation( SET_INSERT," + i + ")'>Insert</a>    \n\
-                   <a onclick='setOperation( SET_DELETE," + i + ")'>Delete</a>    \n\
-                 </div> \n\
-               </div>\n";
+    tempHtml += "<button id='setListSet." + i + "' class='setClass' onclick='slClick( " + i + ", undefined )'>" + s.name + "</button> \n";
 
     for( var j = 0;j < s.songs.length;j++ )
-      tmpHtml += "<button id='setListSong." + i + "." + j + "' class='setListSong' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>";
+      tempHtml += "<button id='setListSong." + i + "." + j + "' class='setListSong' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
 
-    tmpHtml += "<br>";
+    if( operationMode == MODE_MOVE ) // add a '+' at the end so when moving songs across sets we can place them at the end.
+      tempHtml += "<button class='setListSong' onclick='slClick( " + i + ", -1 )'> + </button>";
+
+    tempHtml += "<br>";
   }
+  // Add a + to create a new set
+  tempHtml += "<button class='setClass' onclick='setAdd()'> + </button>\n";
 
-  document.getElementById( 'setlist' ).innerHTML = tmpHtml;
+  document.getElementById( 'setlist' ).innerHTML = tempHtml;
 
   if( curSet != undefined ) // indicate cursor
   {
@@ -540,7 +493,7 @@ function exportSet() { }
 function changeMode( elem, mode )
 {
   if( elem.classList.contains( 'highlight' ) )
-    operationMode = MODE_EDIT;
+    operationMode = MODE_NONE;
   else
     operationMode = mode;
 
@@ -548,7 +501,7 @@ function changeMode( elem, mode )
   for( i = 0;i < modesButtons.length;i++ )
     modesButtons[ i ].classList.remove( 'highlight' );
 
-  if( operationMode != MODE_EDIT ) // Edit is the default mode if nothing selected.
+  if( operationMode )
     elem.classList.add( 'highlight' );
 
   curSet = undefined;
