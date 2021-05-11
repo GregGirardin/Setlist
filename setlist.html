@@ -5,7 +5,7 @@
 <title>Set List Creator</title>
 <style>
 
-.librarySong
+.css_librarySong
 {
   border: 2px solid white;
   background-color: #def;
@@ -15,7 +15,7 @@
   font-size: 10px;
 }
 
-.setListSong
+.css_setListSong
 {
   border: 2px solid white;
   background-color: #def;
@@ -95,6 +95,11 @@
   clip-path: polygon( 0% 0%, 95% 0%, 85% 50%, 95% 100%, 0% 100% );
 }
 
+.css_shighlight
+{
+  color: #f00; /* song highlight means the song will be highlighted in the exported file */
+}
+
 .highlight
 {
   background-color: #f00;
@@ -119,6 +124,8 @@
 <button class='modeButton' id='modeAddButton' onclick='changeMode( MODE_ADD );'>Add</button>
 <button class='modeButton' id='modeDeleteButton' onclick='changeMode( MODE_DELETE );'>Delete</button>
 <button class='modeButton' id='modeMoveButton' onclick='changeMode( MODE_MOVE );'>Move</button>
+<button class='modeButton' id='modeMedleyButton' onclick='changeMode( MODE_MEDLEY );'>Medley</button>
+<button class='modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
 
 <hr>
 <p id='setListName' onClick='setSetlistName()'></p>
@@ -139,8 +146,10 @@ const MODE_NONE   = 0;
 const MODE_ADD    = 1;
 const MODE_DELETE = 2; // delete songs
 const MODE_MOVE   = 3;
-const MODE_OPEN   = 4;
-const MODE_DEL_SET = 5; // want to delete a set
+const MODE_MEDLEY = 4;
+const MODE_HIGHLIGHT  = 5;
+const MODE_OPEN   = 6;
+const MODE_DEL_SET = 7; // want to delete a set
 
 const SET_RENAME  = 0;
 const SET_INSERT  = 1;
@@ -257,7 +266,7 @@ class SetListSong
     this.id = this.name + '.' + this.artist;
     this.id.replace( / /g, "_" );
 
-    this.highLight = false;
+    this.highlight = false;
     this.medley = false;
   }
 }
@@ -292,7 +301,7 @@ function getCurrentElement()
 {
   var elemId, elem;
 
-  if( !curSet )
+  if( curSet == undefined )
     return undefined;
 
   elemId = ( curSong == undefined ) ? "setListSet." + curSet : "setListSong." + curSet + "." + curSong;
@@ -306,7 +315,8 @@ function getCurrentElement()
 function saveSetlist()
 {
   setLists[ curSetList.name ] = deepCopy( curSetList );
-  setEditedState( false );
+  editedFlag = false;
+  generateHTML();
   return true;
 }
 
@@ -317,13 +327,16 @@ function setSetlistName()
   {
     curSetList.name = name;
     document.getElementById( "setListName" ).innerHTML = name;
-    setEditedState( true );
+    editedFlag = true;
+    generateHTML();
   }
 }
 
 // A Song or set was clicked.
 function slClick( setIndex, songIndex )
 {
+  var cs = curSetList.sets[ setIndex ].songs[ songIndex ]; // clicked song.
+
   if( operationMode == MODE_ADD ) // what we click on becomes the insertion point.
   {
     curSet = setIndex; // set the cursor
@@ -335,9 +348,12 @@ function slClick( setIndex, songIndex )
       curSetList.sets.splice( setIndex, 1 );
     else
       curSetList.sets[ setIndex ].songs.splice( songIndex, 1 );
- 
-    setEditedState( true );
+    editedFlag = true;
   }
+  else if( operationMode == MODE_HIGHLIGHT )
+    cs.highlight = !cs.highlight;
+  else if( operationMode ==  MODE_MEDLEY )
+    cs.medley = !cs.medley;
   else if( operationMode == MODE_MOVE ) 
   {
     if( curSet == undefined ) // First click highlights the song we want to move
@@ -350,7 +366,7 @@ function slClick( setIndex, songIndex )
     }
     else // This is the 2nd click.
     {
-      setEditedState( true );
+      editedFlag = true;
 
       if( curSong == undefined ) // moving sets ( 1st click was a set )
       {
@@ -406,7 +422,6 @@ function slClick( setIndex, songIndex )
         curSong = undefined;
       }
     }
-
   }
   else if( songIndex == undefined )
     setRename( setIndex );
@@ -433,7 +448,7 @@ function libSongClick( songId )
         curSong++;
         curSetList.sets[ curSet ].songs.splice( curSong, 0, newSong );
       }
-      setEditedState( true );
+      editedFlag = true;
       generateHTML();
     }
 }
@@ -468,13 +483,14 @@ function setClicked( setName )
 function setAdd()
 {
   curSetList.sets.push( new Set() );
-  setEditedState( true );
+  editedFlag = true;
+
   generateHTML();
 }
 
-////////////////////////////// //////////////////////////////
+///////////////////////////////////////////////////////////
 // Generate main panel's html. Usually the set list itself
-////////////////////////////// //////////////////////////////
+///////////////////////////////////////////////////////////
 function generateHTML()
 {
   var tempHtml = "";
@@ -483,14 +499,8 @@ function generateHTML()
   {
     document.getElementById( "setListName" ).innerHTML = "Choose a set:";
 
-    let slCount = 0;
     for( const[ k, o ] of Object.entries( setLists ) )
-    {
       tempHtml += "<button class='setListName' onclick='setClicked( \"" + k + "\" )'>" + k + "</button>\n<br>";
-      slCount++;
-    }
-    if( !slCount )
-      operationMode = MODE_NONE;
 
     tempHtml += "<br>";
     document.getElementById( 'setlist' ).innerHTML = tempHtml;
@@ -504,11 +514,25 @@ function generateHTML()
       var s = curSetList.sets[ i ];
       tempHtml += "<button id='setListSet." + i + "' class='setClass' onclick='slClick( " + i + ", undefined )'>" + s.name + "</button>\n";
 
-      for( var j = 0;j < s.songs.length;j++ )
-        tempHtml += "<button id='setListSong." + i + "." + j + "' class='setListSong' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
+      var medleyState = false;
 
+      for( var j = 0;j < s.songs.length;j++ )
+      {
+        var classes = 'css_setListSong';
+        if( s.songs[ j ].highlight )
+          classes += ' css_shighlight';
+        if( ( s.songs[ j ].medley ) && medleyState == false )
+          classes += ' medleyStart';
+        else if( ( s.songs[ j ].medley ) && medleyState == true ) 
+          classes += ' medleyCont';
+        else if( ( !s.songs[ j ].medley ) && medleyState == true ) 
+          classes += ' medleyEnd';
+        medleyState = s.songs[ j ].medley;
+
+        tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
+      }
       if( operationMode == MODE_MOVE ) // add a '+' at the end so when moving songs across sets we can place them at the end of a set.
-        tempHtml += "<button class='setListSong' onclick='slClick( " + i + ", -1 )'> + </button>";
+        tempHtml += "<button class='css_setListSong' onclick='slClick( " + i + ", -1 )'> + </button>";
 
       tempHtml += "<br>";
     }
@@ -520,24 +544,19 @@ function generateHTML()
     if( elem )
       elem.classList.add( 'highlight' ); // indicate cursor
   }
+
+  if( editedFlag )
+    document.getElementById( 'saveSetButton' ).classList.add( 'highlight' );
+  else
+    document.getElementById( 'saveSetButton' ).classList.remove( 'highlight');
 }
 
 function generateLibraryHTML()
 {
   var tmpHtml = "";
   for( const[ key, value ] of Object.entries( songLibrary ) )
-    tmpHtml += "<button id='" + value.id + "' class='librarySong' onclick=\"libSongClick('" + value.id + "')\">" + value.name + "</button>\n";
+    tmpHtml += "<button id='" + value.id + "' class='css_librarySong' onclick=\"libSongClick('" + value.id + "')\">" + value.name + "</button>\n";
   document.getElementById( 'library' ).innerHTML = tmpHtml;
-}
-
-function setEditedState( newState )
-{
-  var elem = document.getElementById( 'saveSetButton' );
-  editedFlag = newState;
-  if( editedFlag )
-    elem.classList.add( 'highlight' );
-  else
-    elem.classList.remove( 'highlight' );
 }
 
 ///////////////////////// ////////////////////////// ////////////////////////
@@ -547,7 +566,7 @@ function newSetlist()
   {
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
-    setEditedState( false );
+    editedFlag = false;
   }
 
   curSetList = new SetList( "SET LIST" );
@@ -571,7 +590,7 @@ function changeMode( mode )
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       operationMode = MODE_NONE;
     else
-      setEditedState( false );
+      editedFlag = false;
   }
 
   var buttons = document.getElementsByClassName( 'modeButton' );
@@ -586,11 +605,13 @@ function changeMode( mode )
     var elem;
     switch( operationMode )
     {
-      case MODE_OPEN:   elem = document.getElementById( 'openSetButton' );    break;
-      case MODE_ADD:    elem = document.getElementById( 'modeAddButton' );    break;
+      case MODE_OPEN:       elem = document.getElementById( 'openSetButton' );        break;
+      case MODE_ADD:        elem = document.getElementById( 'modeAddButton' );        break;
       case MODE_DEL_SET:
-      case MODE_DELETE: elem = document.getElementById( 'modeDeleteButton' ); break;
-      case MODE_MOVE:   elem = document.getElementById( 'modeMoveButton' );   break;
+      case MODE_DELETE:     elem = document.getElementById( 'modeDeleteButton' );     break;
+      case MODE_MOVE:       elem = document.getElementById( 'modeMoveButton' );       break;
+      case MODE_MEDLEY:     elem = document.getElementById( 'modeMedleyButton' );     break;
+      case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
     }
     elem.classList.add( 'highlight' );
   }
