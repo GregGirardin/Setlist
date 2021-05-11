@@ -126,7 +126,6 @@
 <button class='modeButton' id='modeMoveButton' onclick='changeMode( MODE_MOVE );'>Move</button>
 <button class='modeButton' id='modeMedleyButton' onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
-
 <hr>
 <p id='setListName' onClick='setSetlistName()'></p>
 <div id='setlist'> </div>
@@ -574,7 +573,19 @@ function newSetlist()
   generateHTML();
 }
 
-function exportSet() { }
+function exportSet()
+{
+  const dummyFile = 'My Dummy Info';
+
+  const a = document.createElement( 'a' );
+  const file = new Blob( [ dummyFile ], { type: 'text/plain' } );
+  
+  a.href = URL.createObjectURL( file );
+  a.download = curSetList.name + ".html";
+  a.click();
+
+	URL.revokeObjectURL( a.href );
+}
 
 function changeMode( mode )
 {
@@ -622,6 +633,8 @@ function changeMode( mode )
   generateHTML();
 }
 
+var myBlob;
+
 function setListInit()
 {
   songLibrary = getLibrary();
@@ -629,7 +642,13 @@ function setListInit()
   setLists = getSetLists();
   generateLibraryHTML();
   newSetlist();
+
+  myBlob = new Blob(["Hello World"], {type: 'text/plain'});
+  var anchor = `<a href="${window.URL.createObjectURL (myBlob ) }" download="demo.txt">Save</a>`; 
 }
+
+
+
 
 </script>
 </body>
