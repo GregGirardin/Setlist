@@ -13,6 +13,12 @@
   padding: 6px;
   text-align: left;
   font-size: 10px;
+  /* width: 5%; */
+}
+
+.css_librarySong:hover
+{
+  border: 2px solid black;
 }
 
 .css_setListSong
@@ -25,7 +31,7 @@
   font-size: 10px;
 }
 
-.menuButton
+.css_menuButton
 {
   border: 2px solid white;
   background-color: #ddf;
@@ -35,7 +41,12 @@
   font-size: 10px;
 }
 
-.modeButton
+.css_menuButton:hover
+{
+  border: 2px solid black;
+}
+
+.css_modeButton
 {
   border: 2px solid white;
   background-color: #bbf;
@@ -45,12 +56,12 @@
   font-size: 10px;
 }
 
-.dropbtn:hover
+.css_modeButton:hover
 {
-  background-color: brown;
+  border: 2px solid black;
 }
 
-.setClass
+.css_setClass
 {
   border: 2px solid white;
   background-color: #ddf;
@@ -60,26 +71,21 @@
   font-size: 16px;
 }
 
-.menu
-{
-  display: block;
-}
-
 #setListName
 {
   font-size: 20px;
   overflow: hidden;
 }
 
-.medleyStart
+.css_medleyStart
 {
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path: polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100%, 5% 50% );
+  clip-path: polygon( 0% 0%, 80% 0, 100% 50%, 80% 100%, 0% 100%, 5% 50% );
 }
 
-.medleyCont
+.css_medleyCont
 {
   position:relative;
   overflow:hidden;
@@ -87,68 +93,90 @@
   clip-path: polygon( 0 15%, 95% 15%, 95% 85%, 0% 85% );
 }
 
-.medleyEnd
+.css_medleyEnd
 {
   position:relative;
   overflow:hidden;
   background: #ddf;
-  clip-path: polygon( 0% 0%, 95% 0%, 85% 50%, 95% 100%, 0% 100% );
+  clip-path: polygon( 0% 0%, 90% 0%, 80% 50%, 90% 100%, 0% 100% );
 }
 
-.css_shighlight
+.css_s_highlight
 {
-  color: #f00; /* song highlight means the song will be highlighted in the exported file */
+  color: #f00; /* css_s_highlight means the song will be css_highlight in the exported file */
 }
 
-.highlight
+.css_highlight
 {
   background-color: #f00;
 }
 
-.topButtons
+.css_topButtons
 {
   background-color: #fdd;
   padding: 10px;
   font-size: 16px;
 }
 
+.css_setlist
+{
+  margin: 0;
+  padding: 0;
+  width: 49.5%;
+  background-color: #f1f1f1;
+  height: 50%;
+  overflow: auto;
+  border: 1px solid black;
+  float: left
+}
+
+.css_library
+{
+  margin: 0;
+  padding: 0;
+  width: 49.5%;
+  background-color: #f1f1f1;
+  height: 800px;
+  overflow: scroll;
+  border: 1px solid black;
+  float: right
+}
+
 </style>
 </head>
 
 <body align="center">
-<button class='menuButton' id='newSetButton'    onclick='newSetlist();'>New</button>
-<button class='menuButton' id='openSetButton'   onclick='changeMode( MODE_OPEN );'>Open</button>
-<button class='menuButton' id='saveSetButton'   onclick='saveSetlist();'>Save</button>
-<button class='menuButton' id='exportSetButton' onclick='exportSet();'>Export</button>
+<input type='file' class='css_menuButton' id='openSetAction' style='display:none'>
+<button class='css_menuButton' id='newSetButton'        onclick='newSetlist();'>New</button>
+<button class='css_menuButton' id='openSetButton'       onclick='openSetlist();'>Open</button>
+<button class='css_menuButton' id='saveSetButton'       onclick='saveSetlist();'>Save</button>
+<input type='file' class='css_menuButton' id='openLibraryAction' style='display:none'>
+<button class='css_menuButton' id='openLibraryButton'   onclick='openLibrary();'>Open Library</button>
 <hr>
-<button class='modeButton' id='modeAddButton' onclick='changeMode( MODE_ADD );'>Add</button>
-<button class='modeButton' id='modeDeleteButton' onclick='changeMode( MODE_DELETE );'>Delete</button>
-<button class='modeButton' id='modeMoveButton' onclick='changeMode( MODE_MOVE );'>Move</button>
-<button class='modeButton' id='modeMedleyButton' onclick='changeMode( MODE_MEDLEY );'>Medley</button>
-<button class='modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
+<button class='css_modeButton' id='modeAddButton'       onclick='changeMode( MODE_ADD );'>Add</button>
+<button class='css_modeButton' id='modeDeleteButton'    onclick='changeMode( MODE_DELETE );'>Delete</button>
+<button class='css_modeButton' id='modeMoveButton'      onclick='changeMode( MODE_MOVE );'>Move</button>
+<button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
+<button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
 <hr>
-<p id='setListName' onClick='setSetlistName()'></p>
-<div id='setlist'> </div>
-<hr>
-<p3>Library</p3>
-<div id='library'> </div>
+<section>
+<div id='setlist' class='css_setlist'> </div>
+<div id='library' class='css_library'> </div>
+</section>
 
 <script>
 var curSet, curSong; // The cursor for various operations
 var editedFlag = false;
-var setLists = {};  // set lists available in library.
 var songLibrary;    // object of LibrarySong[]
 var curSetList;
 
 // Constants.
-const MODE_NONE   = 0;
-const MODE_ADD    = 1;
-const MODE_DELETE = 2; // delete songs
-const MODE_MOVE   = 3;
-const MODE_MEDLEY = 4;
+const MODE_NONE       = 0;
+const MODE_ADD        = 1;
+const MODE_DELETE     = 2;
+const MODE_MOVE       = 3;
+const MODE_MEDLEY     = 4;
 const MODE_HIGHLIGHT  = 5;
-const MODE_OPEN   = 6;
-const MODE_DEL_SET = 7; // want to delete a set
 
 const SET_RENAME  = 0;
 const SET_INSERT  = 1;
@@ -162,66 +190,12 @@ window.onload = setListInit;
 // API sim for debug
 ////////////////////
 
-// Return autogenerated LibrarySong{}, keyed by id
-function getLibrary()
-{
-  var numSongs = 100; // randInt( 10, 20 );
-  var library = {};
-
-  for( var i = 0;i < numSongs;i++ )
-  {
-    var lsong = new LibrarySong( "Song " + i.toString(), "Artist " + i.toString() );
-    lsong.bpm = 80 + i % 100;
-    for( var v = 0;v < 10;v++ )
-      lsong.lyrics += "Blah blah blah blah blah blah blah blah\n";
-
-    library[ lsong.id ] = lsong;
-  }
-
-  return library;
-}
-
-// Return SetList[] of lists in the database.
-function getSetLists()
-{
-  var sLists = {};
-
-  for( var i = 0;i < 10;i++ )
-  {
-    var songIndex = 0;
-
-    setList = new SetList();
-
-    setList.name = "Dummy Set " + i.toString();;
-    var numSets = randInt( 2, 7 );
-
-    for( var setIx = 0;setIx < numSets;setIx++ )
-    {
-      var newSet = new Set();
-      newSet.name = "Set" + ( setIx + 1 ).toString();
-      var numSongs = randInt( 2, 20 );
-      for( var songIx = 0;songIx < numSongs;songIx++ )
-      {
-        songIndex += 1;
-        var song = new SetListSong( "Song " + songIndex.toString(), "Artist " + songIndex.toString() );
-        newSet.songs.push( song );
-      }
-
-      setList.sets[ setIx ] = newSet;
-    }
-
-    sLists[ setList.name ] = setList;
-  }
-
-  return sLists;
-}
-
 function randInt( min, max ) { return Math.floor( Math.random() * ( max - min ) ) + min; }
 
-// Stolen from https://javascript.plainenglish.io/how-to-deep-copy-objects-and-arrays-in-javascript-7c911359b089
-const deepCopy = ( inObject ) =>
+// From https://javascript.plainenglish.io/how-to-deep-copy-objects-and-arrays-in-javascript-7c911359b089
+function deepCopy( inObject )
 {
-  let outObject, value, key;
+  let outObject, key;
 
   if( typeof inObject !== "object" || inObject === null )
     return inObject;
@@ -229,10 +203,7 @@ const deepCopy = ( inObject ) =>
   outObject = Array.isArray( inObject ) ? [] : {};
 
   for( key in inObject )
-  {
-    value = inObject[ key ];
-    outObject[ key ] = deepCopy( value );
-  }
+    outObject[ key ] = deepCopy( inObject[ key ] );
 
   return outObject
 }
@@ -250,8 +221,6 @@ class LibrarySong
     this.artist = artist;
     this.id = this.name + '.' + this.artist; // Unique key for Library. 
     this.id = this.id.replace( / /g, "_" );  // replace spaces with _
-
-    this.bpm = undefined;
     this.lyrics = undefined;
   }
 }
@@ -263,9 +232,9 @@ class SetListSong
     this.name = name; // name and artist are key to find in library
     this.artist = artist;
     this.id = this.name + '.' + this.artist;
-    this.id.replace( / /g, "_" );
+    this.id = this.id.replace( / /g, "_" );
 
-    this.highlight = false;
+    this.css_highlight = false;
     this.medley = false;
   }
 }
@@ -287,12 +256,9 @@ class SetList
   constructor( name )
   {
     this.name = name;
-    this.sets = []; // Set[]
-    var initialSet = new Set();
-    this.sets.push( initialSet );
+    this.sets = [];
+    this.sets.push( new Set() );
   }
-
-  export() { var currentDate = Date.now(); }
 }
 
 // get the cursor element.
@@ -311,30 +277,21 @@ function getCurrentElement()
   return elem;
 }
 
-function saveSetlist()
-{
-  setLists[ curSetList.name ] = deepCopy( curSetList );
-  editedFlag = false;
-  generateHTML();
-  return true;
-}
-
 function setSetlistName()
 {
   var name = prompt( "Enter Setlist Name:", curSetList.name );
   if( name )
   {
     curSetList.name = name;
-    document.getElementById( "setListName" ).innerHTML = name;
     editedFlag = true;
     generateHTML();
   }
 }
 
-// A Song or set was clicked.
-function slClick( setIndex, songIndex )
+function slClick( setIndex, songIndex ) // A song or set was clicked.
 {
   var cs = curSetList.sets[ setIndex ].songs[ songIndex ]; // clicked song.
+  editedFlag = true;
 
   if( operationMode == MODE_ADD ) // what we click on becomes the insertion point.
   {
@@ -347,15 +304,14 @@ function slClick( setIndex, songIndex )
       curSetList.sets.splice( setIndex, 1 );
     else
       curSetList.sets[ setIndex ].songs.splice( songIndex, 1 );
-    editedFlag = true;
   }
   else if( operationMode == MODE_HIGHLIGHT )
-    cs.highlight = !cs.highlight;
-  else if( operationMode ==  MODE_MEDLEY )
+    cs.css_highlight = !cs.css_highlight;
+  else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
   else if( operationMode == MODE_MOVE ) 
   {
-    if( curSet == undefined ) // First click highlights the song we want to move
+    if( curSet == undefined ) // First click css_highlights the song we want to move
     {
       if( songIndex != -1 )
       {
@@ -365,8 +321,6 @@ function slClick( setIndex, songIndex )
     }
     else // This is the 2nd click.
     {
-      editedFlag = true;
-
       if( curSong == undefined ) // moving sets ( 1st click was a set )
       {
         if( songIndex == undefined ) // clicked on a set, do the move.
@@ -467,94 +421,84 @@ function setRename( setIndex )
 
 function setClicked( setName )
 {
-  if( operationMode == MODE_DEL_SET )
-  {
-    delete setLists[ setName ];
-    generateHTML();
-  }
-  else
-  {
-    curSetList = deepCopy( setLists[ setName ] );
-    changeMode( MODE_NONE );
-  }
+  curSetList = deepCopy( setLists[ setName ] );
+  changeMode( MODE_NONE );
 }
 
 function setAdd()
 {
   curSetList.sets.push( new Set() );
   editedFlag = true;
-
   generateHTML();
 }
 
-///////////////////////////////////////////////////////////
-// Generate main panel's html. Usually the set list itself
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+// Generate main panel's html. Usually the set list itself //
+/////////////////////////////////////////////////////////////
 function generateHTML()
 {
-  var tempHtml = "";
+  var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name  + "</div>";
 
-  if( ( operationMode == MODE_OPEN ) || ( operationMode == MODE_DEL_SET ) )
+  for( var i = 0;i < curSetList.sets.length;i++ )
   {
-    document.getElementById( "setListName" ).innerHTML = "Choose a set:";
+    var s = curSetList.sets[ i ];
+    tempHtml += "<button id='setListSet." + i + "' class='css_setClass' onclick='slClick( " + i + ", undefined )'>" + s.name + "</button>\n";
 
-    for( const[ k, o ] of Object.entries( setLists ) )
-      tempHtml += "<button class='setListName' onclick='setClicked( \"" + k + "\" )'>" + k + "</button>\n<br>";
+    var medleyState = false;
+
+    for( var j = 0;j < s.songs.length;j++ )
+    {
+      var classes = 'css_setListSong';
+      if( s.songs[ j ].css_highlight )
+        classes += ' css_s_highlight';
+      if( ( s.songs[ j ].medley ) && medleyState == false )
+        classes += ' css_medleyStart';
+      else if( ( s.songs[ j ].medley ) && medleyState == true ) 
+        classes += ' css_medleyCont';
+      else if( ( !s.songs[ j ].medley ) && medleyState == true ) 
+        classes += ' css_medleyEnd';
+      medleyState = s.songs[ j ].medley;
+
+      tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
+    }
+    if( operationMode == MODE_MOVE ) // add a '+' at the end so when moving songs across sets we can place them at the end of a set.
+      tempHtml += "<button class='css_setListSong' onclick='slClick( " + i + ", -1 )'> + </button>";
 
     tempHtml += "<br>";
-    document.getElementById( 'setlist' ).innerHTML = tempHtml;
   }
-  else // in other modes this panel shows the current set list.
-  {
-    document.getElementById( "setListName" ).innerHTML = curSetList.name;
+  tempHtml += "<button class='css_setClass' onclick='setAdd()'> + </button>\n"; // Add a + to create a new set
 
-    for( var i = 0;i < curSetList.sets.length;i++ )
-    {
-      var s = curSetList.sets[ i ];
-      tempHtml += "<button id='setListSet." + i + "' class='setClass' onclick='slClick( " + i + ", undefined )'>" + s.name + "</button>\n";
+  document.getElementById( 'setlist' ).innerHTML = tempHtml;
 
-      var medleyState = false;
-
-      for( var j = 0;j < s.songs.length;j++ )
-      {
-        var classes = 'css_setListSong';
-        if( s.songs[ j ].highlight )
-          classes += ' css_shighlight';
-        if( ( s.songs[ j ].medley ) && medleyState == false )
-          classes += ' medleyStart';
-        else if( ( s.songs[ j ].medley ) && medleyState == true ) 
-          classes += ' medleyCont';
-        else if( ( !s.songs[ j ].medley ) && medleyState == true ) 
-          classes += ' medleyEnd';
-        medleyState = s.songs[ j ].medley;
-
-        tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
-      }
-      if( operationMode == MODE_MOVE ) // add a '+' at the end so when moving songs across sets we can place them at the end of a set.
-        tempHtml += "<button class='css_setListSong' onclick='slClick( " + i + ", -1 )'> + </button>";
-
-      tempHtml += "<br>";
-    }
-    tempHtml += "<button class='setClass' onclick='setAdd()'> + </button>\n"; // Add a + to create a new set
-
-    document.getElementById( 'setlist' ).innerHTML = tempHtml;
-
-    var elem = getCurrentElement();
-    if( elem )
-      elem.classList.add( 'highlight' ); // indicate cursor
-  }
+  var elem = getCurrentElement();
+  if( elem )
+    elem.classList.add( 'css_highlight' ); // indicate cursor
 
   if( editedFlag )
-    document.getElementById( 'saveSetButton' ).classList.add( 'highlight' );
+    document.getElementById( 'saveSetButton' ).classList.add( 'css_highlight' );
   else
-    document.getElementById( 'saveSetButton' ).classList.remove( 'highlight');
+    document.getElementById( 'saveSetButton' ).classList.remove( 'css_highlight' );
 }
 
 function generateLibraryHTML()
 {
-  var tmpHtml = "";
+  var t = []; // temp array
   for( const[ key, value ] of Object.entries( songLibrary ) )
-    tmpHtml += "<button id='" + value.id + "' class='css_librarySong' onclick=\"libSongClick('" + value.id + "')\">" + value.name + "</button>\n";
+    t.push( value );
+  
+  t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );
+  var ll = undefined;
+  var tmpHtml = "Song Library";
+  for( var i = 0;i < t.length;i++ )
+  {
+    var cl = t[ i ].id[ 0 ];
+    if( cl != ll )
+    {
+      ll = cl;
+      tmpHtml += "<br><br>" + cl + " ";
+    }
+    tmpHtml += "<button id='" + t[ i ].id + "' class='css_librarySong' onclick=\"libSongClick('" + t[ i ].id + "')\">" + t[ i ].name + "</button>\n";
+  }
   document.getElementById( 'library' ).innerHTML = tmpHtml;
 }
 
@@ -562,69 +506,474 @@ function generateLibraryHTML()
 function newSetlist()
 {
   if( editedFlag )
-  {
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
-    editedFlag = false;
-  }
+  editedFlag = false;
 
-  curSetList = new SetList( "SET LIST" );
-  document.getElementById( 'setListName' ).innerHTML = curSetList.name;
+  curSetList = new SetList( "SL" );
   generateHTML();
 }
 
-function exportSet()
+function openSetlist()
 {
-  const dummyFile = 'My Dummy Info';
+  if( editedFlag )
+    if( !window.confirm( "Unsaved Edits. Continue?" ) )
+      return;
+  editedFlag = false;
 
+  document.getElementById( 'openSetAction' ).click();
+}
+
+function openLibrary()
+{
+  document.getElementById( 'openLibraryAction' ).click();
+}
+
+// this are just big string literals. Put here to make the export function more readable
+function htmlConstStrings( index )
+{
+  switch( index )
+  {
+    case 0:
+      return( function(){/* 
+  <style>
+  .accordion
+  {
+    border: 2px solid white;
+    background-color: #def;
+    color: #444;
+    cursor: pointer;
+    padding: 6px;
+    text-align: left;
+    outline: none;
+    font-size: 16px;
+    transition: 0.2s;
+  }
+
+  .panel
+  {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    font-size: 20px;
+    background-color: #fee;
+    text-align: left;
+  }
+
+  .css_medleyStart
+  {
+    position:relative;
+    overflow:hidden;
+    background: #ddf;
+    clip-path: polygon( 0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100%, 5% 50% );
+  }
+
+  .css_medleyCont
+  {
+    position:relative;
+    overflow:hidden;
+    background: #ddf;
+    clip-path: polygon( 0 15%, 95% 15%, 95% 85%, 0% 85% );
+  }
+
+  .css_medleyEnd
+  {
+    position:relative;
+    overflow:hidden;
+    background: #ddf;
+    clip-path: polygon( 0% 0%, 95% 0%, 85% 50%, 95% 100%, 0% 100% );
+  }
+
+  .css_highlight
+  {
+    color: #d33;
+  }
+
+  .css_topButtons
+  {
+    background-color: #fdd;
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  </style>
+  </head>
+
+  <body align="center">
+  <button class="css_topButtons" id="fontButton+" onclick="fontPlus();">Font +</button>
+  <button class="css_topButtons" id="fontButton-" onclick="fontMinus();">Font -</button>
+  <button id="fontSizeButton">Size</button>
+  <button class="css_topButtons" id="verticalButton+" onclick="displayPlus();">Expand</button>
+  <button class="css_topButtons" id="verticalButton-" onclick="displayMinus();">Shrink</button>
+*/}.toString().slice( 14, -3 ) ) ;
+break;
+
+case 1:
+  return( function(){/* 
+<script>
+const minFont = 14
+const maxFont = 24;
+var fontSize = 16;
+
+function fontPlus()
+{
+  fontSize += 2;
+  if( fontSize > maxFont )
+    fontSize = maxFont;
+
+  setFontProperty( fontSize );
+}
+
+function fontMinus()
+{
+  fontSize -= 2;
+  if( fontSize < minFont )
+    fontSize = minFont;
+
+  setFontProperty( fontSize );
+}
+
+function setFontProperty()
+{
+  var fontSizeStr = fontSize.toString() + "px";
+  var elem = document.getElementById( "fontSizeButton" );
+  elem.style.fontSize = fontSizeStr;
+  elem.innerHTML = fontSizeStr;
+
+  for( var i = 0;i < acc.length;i++ )
+    acc[ i ].nextElementSibling.style.fontSize = fontSizeStr;
+}
+
+const DISPLAY_MIN = 0;
+const DISPLAY_MED1 = 1;
+const DISPLAY_MED2 = 2;
+const DISPLAY_LARGE = 3;
+
+var displayFormat = DISPLAY_LARGE;
+
+function displayPlus()
+{
+  if( displayFormat < DISPLAY_LARGE )
+  {
+    displayFormat++;
+    displaySet( displayFormat );
+  }
+}
+
+function displayMinus()
+{
+  if( displayFormat > DISPLAY_MIN )
+  {
+    displayFormat--;
+    displaySet( displayFormat );
+  }
+}
+
+function closeAll()
+{
+  // Close all accordions
+  for( var i = 0;i < acc.length;i++ )
+  {
+    acc[ i ].nextElementSibling.style.display = "none"; 
+    acc[ i ].classList.remove( "active" );
+  }
+}
+
+function displaySet( disFormat )
+{
+  var minWProp;
+  var fSize = "16px"; // Font size of song names in accordions
+  var slFontSize; // set list font size
+
+  closeAll();
+
+  var clipPath;
+
+  switch( disFormat )
+  {
+    case DISPLAY_MIN:
+      minWProp = "3%";
+      fSize = "20px";
+      clipPath = "polygon( 0% 0%, 60% 0, 100% 50%, 60% 100%, 0% 100% )";
+      break;
+
+    case DISPLAY_MED1:
+      minWProp = "9%";
+      fSize = "10px";
+      clipPath = "polygon( 0% 0%, 70% 0, 100% 50%, 70% 100%, 0% 100% )";
+      break;
+
+    case DISPLAY_MED2:
+      minWProp = "24%";
+      slFontSize = "100%";
+      clipPath = "polygon( 0% 0%, 85% 0, 95% 50%, 85% 100%, 0% 100% )";
+      break;
+
+    case DISPLAY_LARGE:
+      minWProp = "50%";
+      slFontSize = "150%";
+      clipPath = "polygon( 0% 0%, 85% 0, 95% 50%, 85% 100%, 0% 100% )";
+      break;
+  }
+
+  var sets = document.getElementsByClassName( "setname" );
+  for( var i = 0;i < sets.length;i++ )
+    if( slFontSize )
+    {
+      sets[ i ].style.fontSize = slFontSize;
+      sets[ i ].style.display = "block";
+    }
+    else
+      sets[ i ].style.display = "none";
+
+  for( var i = 0;i < acc.length;i++ )
+  {
+    acc[ i ].style.minWidth = minWProp;
+
+    var strName;
+    var prune = songNames[ i ][ 1 ] == '.' ? 0 : 1;
+    if( disFormat == DISPLAY_MIN )
+      strName = songNames[ i ].substr( 0, 1 + prune );
+    else if( disFormat == DISPLAY_MED1 )
+      strName = songNames[ i ].substr( 2 + prune, 10 + prune );
+    else if( disFormat == DISPLAY_MED2 )
+      strName = songNames[ i ].substr( 0, 20 );
+    else
+      strName = songNames[ i ];
+
+    acc[ i ].innerHTML = strName;
+    acc[ i ].style.fontSize = fSize;
+    if( acc[ i ].classList.contains( "css_medleyStart" ) )
+      acc[ i ].style.clipPath = clipPath;
+  }
+}
+
+var scrollToElem; 
+
+function expandSongNameByIndex( i )
+{
+  acc[ i ].innerHTML = songNames[ i ];
+  acc[ i ].style.minWidth = "96%";
+  acc[ i ].style.fontSize = "16px";
+  if( acc[ i ].classList.contains( "css_medleyStart" ) )
+    acc[ i ].style.clipPath = "polygon( 0% 0%, 85% 0, 95% 50%, 85% 100%, 0% 100% )";
+}
+
+function accordionClick( elem )
+{
+  var wasOpen = elem.classList.contains( "active" );
+
+  if( wasOpen && ( elem.classList.contains( "css_medleyCont" ) || elem.classList.contains( "css_medleyEnd" ) ) )
+  {
+    elem.scrollIntoView();
+    return;
+  }
+
+  closeAll();
+  displaySet( displayFormat ); 
+
+  if( !wasOpen )
+  {
+    scrollToElem = elem;
+
+    // Go to head of medley and open the whole thing.
+    while( elem.classList.contains( "css_medleyCont" ) || elem.classList.contains( "css_medleyEnd" ) )
+      elem = acc[ elem.accIndex - 1 ];
+
+    // Open this one if it was closed before.
+    inMedley = elem.classList.contains( "css_medleyStart" );
+
+    while( elem )
+    {
+      elem.classList.add( "active" );
+
+      // Make the song name visible in the compressed modes. Need to clear this when minimizing in displaySet() above
+      expandSongNameByIndex( elem.accIndex );
+      if( elem.accIndex < acc.length - 1 )
+        expandSongNameByIndex( elem.accIndex + 1 );
+
+      var panel = elem.nextElementSibling;
+      setFontProperty(); // w/o this changing the font only applies to the open song. Possibly desirable.
+      panel.style.display = "block";
+  
+      if( inMedley )
+      {
+        elem = acc[ elem.accIndex + 1 ];
+        if( elem.classList.contains( "css_medleyEnd" ) )
+          inMedley = false;
+      }
+      else
+        elem = undefined;
+    }
+    scrollToElem.scrollIntoView();
+    setTimeout( function() { scrollToElem.scrollIntoView(); }, 500 );
+  }
+}
+
+var acc = document.getElementsByClassName( "accordion" );
+
+songNames = [];
+
+for( var i = 0;i < acc.length;i++ )
+{
+  songNames[ i ] = acc[ i ].innerHTML;
+  acc[ i ].addEventListener( "click", function() { accordionClick( this ); } );
+  acc[ i ].nextElementSibling.addEventListener( "click", function() { this.previousElementSibling.scrollIntoView(); } );
+  acc[ i ].accIndex = i;
+}
+displaySet( DISPLAY_LARGE );
+*/}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" );
+  break;
+  }
+
+  return undefined;
+}
+
+function saveSetlist()
+{
+  var setFile = "<!--\n";
+  setFile += JSON.stringify( curSetList );
+  setFile += "\n-->";
+
+  setFile += "<!DOCTYPE html> <html> <head> <meta name='viewport' content='width=device-width, initial-scale=1'>";
+  setFile += "<title>" + curSetList.name + "</title>";
+  setFile += htmlConstStrings( 0 );
+
+  var ffState = false; // Fixed Font state
+
+  // Songs
+  for( var setIndex = 0;setIndex < curSetList.sets.length;setIndex++ )
+  {
+    setFile += "<hr><div class='setname'>" + curSetList.sets[ setIndex ].name + "</div>\n";
+
+    var inMedley = false;
+
+    for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
+    {
+      var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
+      var songLine = 0;
+      var ffManual = false;
+      var fLines = songLibrary[ sng.id ].lyrics.split( "\n" );
+
+      for( line of fLines )
+      {
+        // if tablature or chords. "E|", "A|" etc or "I: A E D", "C: A D". Use a fixed font.
+        songLine++;
+        var c2 = line.substring( 1, 2 );
+        ffAuto = ( c2 == "|" || c2 == ":" ) ? true : false;
+
+        if( ffAuto || ffManual ) // We want to use a fixed font?
+        {
+          if( !ffState )
+          {
+            setFile += "<font style='font-family:courier;'>\n";
+            ffState = true;
+          }
+        }
+        else if( ffState ) // Don't want fixed font. Fixed is harder to read for lyrics.
+        {
+          setFile += "</font>\n";
+          ffState = false;
+        }
+
+        if( songLine == 1 ) // Assume first line is song title
+        {
+          var classString = "accordion";
+          if( curSetList.sets[ setIndex ].songs[ songIndex ].css_highlight == true )
+            classString += " css_highlight";
+
+          if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
+          {
+            if( !inMedley )
+            {
+              classString += " css_medleyStart";
+              inMedley = true;
+            }
+            else
+              classString += " css_medleyCont";
+          }
+          else if( inMedley )
+          {
+            classString += " css_medleyEnd";
+            inMedley = false;
+          }
+          setFile += "<button class='" + classString + "'>";
+          setFile += songLine.toString() + ". " + line + "</button>\n"; 
+          setFile += "<div class='panel'>\n";
+        }
+        // Bold lines starting with !
+        else if( line.substring( 0, 1 ) == "!" )
+          setFile += "<b>- " + line.substring( 1 ) + "-</b><br>\n"
+        // Ignore 2nd line if empty. It's unnecessary space in the html
+        else if( songLine > 1 || line != "\n" ) // add spaces
+        {
+          var nLine = "";
+          var numSpaces = 0;
+
+          for( c of line.split( "" ) )
+          {
+            if( c == " " )
+              numSpaces += 1;
+            else
+            {
+              if( numSpaces == 1 )
+                nLine += " ";
+              else if( numSpaces > 1 )
+                for( var tmp = 0;tmp < numSpaces;tmp++ )
+                  nLine += "&nbsp"; // replace spaces in the line so the browser doesn't skip it.
+              numSpaces = 0;
+              nLine += c;
+            }
+          }
+          setFile += nLine + "<br>\n";
+        }
+      }
+      if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
+        setFile += "<font size='5'> &#8595;</font>";  // Big down arrow
+      setFile += "</div>\n\n";
+    }
+  }
+
+  setFile += htmlConstStrings( 1 );
+
+  // provide URL for abuser to download set.
   const a = document.createElement( 'a' );
-  const file = new Blob( [ dummyFile ], { type: 'text/plain' } );
+  const file = new Blob( [ setFile ], { type: 'text/plain' } );
   
   a.href = URL.createObjectURL( file );
   a.download = curSetList.name + ".html";
   a.click();
 
 	URL.revokeObjectURL( a.href );
+
+  editedFlag = false;
+  generateHTML();
+  return true;
 }
 
 function changeMode( mode )
 {
-  if( ( mode == MODE_DELETE ) && ( operationMode == MODE_OPEN ) )
-    operationMode = MODE_DEL_SET;
-  else if( ( mode == MODE_DELETE ) && ( operationMode == MODE_DEL_SET ) )
-    operationMode = MODE_OPEN;
-  else
-    operationMode = ( mode == operationMode ) ? MODE_NONE : mode;
+  operationMode = ( mode == operationMode ) ? MODE_NONE : mode;
 
-  if( ( operationMode == MODE_OPEN ) && editedFlag )
-  {
-    if( !window.confirm( "Unsaved Edits. Continue?" ) )
-      operationMode = MODE_NONE;
-    else
-      editedFlag = false;
-  }
-
-  var buttons = document.getElementsByClassName( 'modeButton' );
+  var buttons = document.getElementsByClassName( 'css_modeButton' );
   for( i = 0;i < buttons.length;i++ )
-    buttons[ i ].classList.remove( 'highlight' );
-  buttons = document.getElementsByClassName( 'menuButton' );
+    buttons[ i ].classList.remove( 'css_highlight' );
+  buttons = document.getElementsByClassName( 'css_menuButton' );
   for( i = 0;i < buttons.length;i++ )
-    buttons[ i ].classList.remove( 'highlight' );
+    buttons[ i ].classList.remove( 'css_highlight' );
 
   if( operationMode != MODE_NONE )
   {
     var elem;
     switch( operationMode )
     {
-      case MODE_OPEN:       elem = document.getElementById( 'openSetButton' );        break;
       case MODE_ADD:        elem = document.getElementById( 'modeAddButton' );        break;
-      case MODE_DEL_SET:
       case MODE_DELETE:     elem = document.getElementById( 'modeDeleteButton' );     break;
       case MODE_MOVE:       elem = document.getElementById( 'modeMoveButton' );       break;
       case MODE_MEDLEY:     elem = document.getElementById( 'modeMedleyButton' );     break;
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
     }
-    elem.classList.add( 'highlight' );
+    elem.classList.add( 'css_highlight' );
   }
 
   curSet = undefined;
@@ -633,23 +982,68 @@ function changeMode( mode )
   generateHTML();
 }
 
-var myBlob;
-
 function setListInit()
 {
-  songLibrary = getLibrary();
-
-  setLists = getSetLists();
-  generateLibraryHTML();
   newSetlist();
+  document.getElementById( 'openSetAction' ).addEventListener( 'change', openSetFile, false );
+  document.getElementById( 'openLibraryAction' ).addEventListener( 'change', openLibraryFile, false );
 
-  myBlob = new Blob(["Hello World"], {type: 'text/plain'});
-  var anchor = `<a href="${window.URL.createObjectURL (myBlob ) }" download="demo.txt">Save</a>`; 
+  getDefaultLibrary();
 }
 
+function getDefaultLibrary()
+{
+  // read text from URL location
+  var request = new XMLHttpRequest();
+  request.open( 'GET', 'http://gbi.vinoski.net/lyricLibrary.json', true );
+  request.send( null );
+  request.onreadystatechange = function ()
+  {
+    if (request.readyState === 4 && request.status === 200 )
+    {
+      var type = request.getResponseHeader( 'Content-Type' );
+      if( type.indexOf( "text" ) !== 1 )
+      {
+        songLibrary = JSON.parse( request.responseText );
+        generateLibraryHTML();
+      }
+    }
+  }
+}
 
+function openSetFile( e )
+{
+  var file = e.target.files[ 0 ];
+  if( !file )
+    return;
+  var reader = new FileReader();
+  reader.onload = function( e )
+  {
+    var lines = e.target.result.split( "\n" ); // line 2 is JSON of the setList
+    var parsed = JSON.parse( lines[ 1 ] );
+    curSetList = parsed;
+    generateHTML();
+    document.getElementById( 'openSetAction' ).value = null;
+  };
 
+  reader.readAsText( file );
+}
 
+function openLibraryFile( e )
+{
+  var file = e.target.files[ 0 ];
+  if( !file )
+    return;
+  var reader = new FileReader();
+  reader.onload = function( e )
+  {
+    var parsed = JSON.parse( e.target.result );
+    songLibrary = parsed;
+    generateLibraryHTML();
+  };
+
+  reader.readAsText( file );
+}
 </script>
 </body>
 </html>
