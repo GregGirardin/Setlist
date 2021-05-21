@@ -157,10 +157,11 @@ Set List <br>
 Library <br>
 <input type='file' class='css_menuButton' id='addLibraryAction' style='display:none'>
 <button class='css_menuButton' id='newLibraryButton'  onclick='newLibrary();'>New</button>
-<button class='css_menuButton' id='addLibraryButton'  onclick='addLibrary();'>Open/Add</button>
+<button class='css_menuButton' id='addLibraryButton'  onclick='addLibrary();'>Open+</button>
 <button class='css_menuButton' id='saveLibraryButton' onclick='saveLibrary();'>Save</button>
+<button class='css_menuButton' id='addLibSongButton'  onclick='changeMode( MODE_ADD_LIB );'>+</button>
 <button class='css_modeButton' id='modeEditButton'    onclick='changeMode( MODE_EDIT );'>Edit</button>
-
+<button class='css_modeButton' id='modeDelLibButton'  onclick='changeMode( MODE_DEL_LIB );'>Delete</button>
 <hr>
 <div id='library'> </div>
 </div>
@@ -168,8 +169,9 @@ Library <br>
 
 <script>
 var curSet, curSong; // The cursor for various operations
-var editedFlag = false;
-var songLibrary = {};    // object of LibrarySong[]
+var slEditedFlag = false;
+var libEditedFlag = false;
+var songLibrary = {}; // object of LibrarySong[]
 var curSetList;
 var editSong; // song we're editing if MODE_EDIT
 
@@ -181,19 +183,21 @@ const MODE_MOVE       = 3;
 const MODE_MEDLEY     = 4;
 const MODE_HIGHLIGHT  = 5;
 const MODE_EDIT       = 6; // edit library
+const MODE_DEL_LIB    = 7; // delete from library
+const MODE_ADD_LIB    = 8; // add to library
 
 var operationMode = MODE_NONE;
 
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name, artist )
+  constructor( name, artist, lyrics=undefined )
   {
     this.name = name;
     this.artist = artist;
     this.id = this.name + '.' + this.artist; // Unique key for Library. 
     this.id = this.id.replace( / /g, "_" );  // replace spaces with _
-    this.lyrics = undefined;
+    this.lyrics = lyrics;
   }
 }
 
@@ -266,15 +270,15 @@ function setSetlistName()
   if( name )
   {
     curSetList.name = name;
-    editedFlag = true;
-    generateHTML();
+    slEditedFlag = true;
+    generateSetlistHTML();
   }
 }
 
 function slClick( setIndex, songIndex ) // A song or set was clicked.
 {
   var cs = curSetList.sets[ setIndex ].songs[ songIndex ]; // clicked song.
-  editedFlag = true;
+  slEditedFlag = true;
 
   if( operationMode == MODE_ADD ) // what we click on becomes the insertion point.
   {
@@ -362,7 +366,7 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
   else if( songIndex == undefined )
     setRename( setIndex );
 
-  generateHTML(); 
+  generateSetlistHTML(); 
 }
 
 // clicking on a library song should add the song at the current cursor position
@@ -385,13 +389,19 @@ function libSongClick( songId )
         curSong++;
         curSetList.sets[ curSet ].songs.splice( curSong, 0, newSong );
       }
-      editedFlag = true;
-      generateHTML();
+      slEditedFlag = true;
+      generateSetlistHTML();
     }
   }
   else if( operationMode == MODE_EDIT )
   {
     editSong = songLibrary[ songId ];
+    generateLibraryHTML();
+  }
+  else if( operationMode == MODE_DEL_LIB )
+  {
+    libEditedFlag = true;
+    delete( songLibrary[ songId ] );
     generateLibraryHTML();
   }
 }
@@ -406,20 +416,19 @@ function setRename( setIndex )
     elem.innerHTML = name;
   }
 
-  generateHTML();
+  generateSetlistHTML();
 }
 
 function setAdd()
 {
   curSetList.sets.push( new Set() );
-  editedFlag = true;
-  generateHTML();
+  slEditedFlag = true;
+  generateSetlistHTML();
 }
 
 /////////////////////////////////////////////////////////////
-// Generate main panel's html. Usually the set list itself //
 /////////////////////////////////////////////////////////////
-function generateHTML()
+function generateSetlistHTML()
 {
   var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name  + "</div>";
 
@@ -458,7 +467,7 @@ function generateHTML()
   if( elem )
     elem.classList.add( 'css_highlight' ); // Hndicate cursor
 
-  if( editedFlag )
+  if( slEditedFlag )
     document.getElementById( 'saveSetButton' ).classList.add( 'css_highlight' );
   else
     document.getElementById( 'saveSetButton' ).classList.remove( 'css_highlight' );
@@ -466,12 +475,12 @@ function generateHTML()
 
 function generateLibraryHTML()
 {
-  if( ( operationMode == MODE_EDIT ) && ( editSong ) )
+  if( ( operationMode == MODE_EDIT ) && editSong )
   {
-    tmpHtml = "<div contenteditable='true' class='css_editSong'>" + editSong.name + "</div>";
-    tmpHtml += "<div contenteditable='true' class='css_editSong'>" + editSong.artist + "</div>";
+    tmpHtml = "<div contenteditable='true' id='editSongName' class='css_editSong'>" + editSong.name + "</div>";
+    tmpHtml += "<div contenteditable='true' id='editSongArtist' class='css_editSong'>" + editSong.artist + "</div>";
     var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
-    tmpHtml += "<div contenteditable='true' class='css_editSong'>" + lyrics + "</div>";
+    tmpHtml += "<div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
   }
   else
   {
@@ -484,7 +493,7 @@ function generateLibraryHTML()
     var tmpHtml = "";
     var firstTime = true;
 
-    if( t.length) 
+    if( t.length )
       for( var i = 0;i < t.length;i++ )
       {
         var cl = t[ i ].id[ 0 ];
@@ -504,27 +513,32 @@ function generateLibraryHTML()
       tmpHtml += "Empty.";
   }
   document.getElementById( 'library' ).innerHTML = tmpHtml;
+
+  if( libEditedFlag )
+    document.getElementById( 'saveLibraryButton' ).classList.add( 'css_highlight' );
+  else
+    document.getElementById( 'saveLibraryButton' ).classList.remove( 'css_highlight' );
 }
 
 ///////////////////////// ////////////////////////// ////////////////////////
 function newSetlist()
 {
-  if( editedFlag )
+  if( slEditedFlag )
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
 
-  editedFlag = false;
+  slEditedFlag = false;
   curSetList = new SetList( "SL" );
-  generateHTML();
+  generateSetlistHTML();
 }
 
 function openSetlist()
 {
-  if( editedFlag )
+  if( slEditedFlag )
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
 
-  editedFlag = false;
+  slEditedFlag = false;
   document.getElementById( 'openSetAction' ).click();
 }
 
@@ -558,7 +572,7 @@ function openSetFile( e )
     var lines = e.target.result.split( "\n" ); // Line 2 is JSON of the setList
     var parsed = JSON.parse( lines[ 1 ] );
     curSetList = parsed;
-    generateHTML();
+    generateSetlistHTML();
     document.getElementById( 'openSetAction' ).value = null;
   }
 
@@ -569,6 +583,7 @@ function openSetFile( e )
 function newLibrary()
 {
   songLibrary = {};
+  libEditedFlag = false;
   generateLibraryHTML();
 }
 
@@ -1013,33 +1028,58 @@ function saveSetlist()
 
 	URL.revokeObjectURL( a.href );
 
-  editedFlag = false;
-  generateHTML();
+  slEditedFlag = false;
+  generateSetlistHTML();
   return true;
 }
 
 function saveLibrary()
 {
-  var libFile = JSON.stringify( songLibrary );
+  // Provide URL for abuser to download set.
+  const file = new Blob( [ JSON.stringify( songLibrary ) ], { type: 'text/plain' } );
 
-  // provide URL for abuser to download set.
   const a = document.createElement( 'a' );
-  const file = new Blob( [ libFile ], { type: 'text/plain' } );
-  
   a.href = URL.createObjectURL( file );
   a.download = "songLibrary.json";
   a.click();
-
-	URL.revokeObjectURL( a.href );
+  URL.revokeObjectURL( a.href );
+  libEditedFlag = false;
+  generateLibraryHTML();
 }
 
 function changeMode( mode )
 {
-  editSong = undefined;
+  // We were editing a library file. Save the changes.
+  if( ( operationMode == MODE_EDIT ) && editSong )
+  {
+    var editedSong = new LibrarySong( document.getElementById( "editSongName" ).innerHTML,
+                                      document.getElementById( "editSongArtist" ).innerHTML,
+                                      document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
 
+    delete( songLibrary[ editSong.id ] );
+    if( editedSong.id != "Name.Artist" ) // That's the default name when adding, don't add.
+    {
+      //console.log( editedSong );
+      // tbd, check for a change before setting libEditedFlag.
+      songLibrary[ editedSong.id ] = editedSong;
+      libEditedFlag = true;
+    }
+  }
+
+  editSong = undefined;
   operationMode = ( mode == operationMode ) ? MODE_NONE : mode;
 
+  // Adding a song to the library. Create an empty one and change to MODE_EDIT
+  if( operationMode == MODE_ADD_LIB )
+  {
+    editSong = new LibrarySong( "Name", "Artist", "Lyrics..." );
+    operationMode = MODE_EDIT;
+  }
+
   var buttons = document.getElementsByClassName( 'css_modeButton' );
+  for( i = 0;i < buttons.length;i++ )
+    buttons[ i ].classList.remove( 'css_highlight' );
+  buttons = document.getElementsByClassName( 'css_menuButton' );
   for( i = 0;i < buttons.length;i++ )
     buttons[ i ].classList.remove( 'css_highlight' );
 
@@ -1054,6 +1094,7 @@ function changeMode( mode )
       case MODE_MEDLEY:     elem = document.getElementById( 'modeMedleyButton' );     break;
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
       case MODE_EDIT:       elem = document.getElementById( 'modeEditButton' );       break;
+      case MODE_DEL_LIB:    elem = document.getElementById( 'modeDelLibButton' );     break;
     }
     elem.classList.add( 'css_highlight' );
   }
@@ -1061,7 +1102,7 @@ function changeMode( mode )
   curSet = undefined;
   curSong = undefined;
 
-  generateHTML();
+  generateSetlistHTML();
   generateLibraryHTML();
 }
 
