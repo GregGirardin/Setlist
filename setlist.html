@@ -933,14 +933,36 @@ function saveSetlist()
     for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
     {
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
-      var songLine = 0;
       var ffManual = false;
+
       var fLines = songLibrary[ sng.id ].lyrics.split( "\n" );
+
+      var classString = "accordion";
+      if( curSetList.sets[ setIndex ].songs[ songIndex ].css_highlight == true )
+        classString += " css_highlight";
+
+      if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
+      {
+        if( !inMedley )
+        {
+          classString += " css_medleyStart";
+          inMedley = true;
+        }
+        else
+          classString += " css_medleyCont";
+      }
+      else if( inMedley )
+      {
+        classString += " css_medleyEnd";
+        inMedley = false;
+      }
+      setFile += "<button class='" + classString + "'>";
+      setFile += (songIndex + 1).toString() + ". " + sng.name + "</button>\n"; // tbd, include artist if present
+      setFile += "<div class='panel'>\n";
 
       for( line of fLines )
       {
         // if tablature or chords. "E|", "A|" etc or "I: A E D", "C: A D". Use a fixed font.
-        songLine++;
         var c2 = line.substring( 1, 2 );
         ffAuto = ( c2 == "|" || c2 == ":" ) ? true : false;
 
@@ -958,36 +980,11 @@ function saveSetlist()
           ffState = false;
         }
 
-        if( songLine == 1 ) // Assume first line is song title
-        {
-          var classString = "accordion";
-          if( curSetList.sets[ setIndex ].songs[ songIndex ].css_highlight == true )
-            classString += " css_highlight";
-
-          if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
-          {
-            if( !inMedley )
-            {
-              classString += " css_medleyStart";
-              inMedley = true;
-            }
-            else
-              classString += " css_medleyCont";
-          }
-          else if( inMedley )
-          {
-            classString += " css_medleyEnd";
-            inMedley = false;
-          }
-          setFile += "<button class='" + classString + "'>";
-          setFile += songLine.toString() + ". " + line + "</button>\n"; 
-          setFile += "<div class='panel'>\n";
-        }
         // Bold lines starting with !
-        else if( line.substring( 0, 1 ) == "!" )
+        if( line.substring( 0, 1 ) == "!" )
           setFile += "<b>- " + line.substring( 1 ) + "-</b><br>\n";
         // Ignore 2nd line if empty. It's unnecessary space in the html
-        else if( songLine > 1 || line != "\n" ) // add spaces
+        else if( line != "\n" ) // add spaces
         {
           var nLine = "";
           var numSpaces = 0;
