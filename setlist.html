@@ -13,13 +13,9 @@
   padding: 6px;
   text-align: left;
   font-size: 10px;
-  /* width: 5%; */
 }
 
-.css_librarySong:hover
-{
-  border: 2px solid black;
-}
+.css_librarySong:hover { border: 2px solid black; }
 
 .css_setListSong
 {
@@ -41,10 +37,7 @@
   font-size: 10px;
 }
 
-.css_menuButton:hover
-{
-  border: 2px solid black;
-}
+.css_menuButton:hover { border: 2px solid black; }
 
 .css_modeButton
 {
@@ -56,10 +49,7 @@
   font-size: 10px;
 }
 
-.css_modeButton:hover
-{
-  border: 2px solid black;
-}
+.css_modeButton:hover { border: 2px solid black; }
 
 .css_setClass
 {
@@ -71,11 +61,7 @@
   font-size: 16px;
 }
 
-#setListName
-{
-  font-size: 20px;
-  overflow: hidden;
-}
+#setListName { font-size: 20px; }
 
 .css_medleyStart
 {
@@ -101,15 +87,8 @@
   clip-path: polygon( 0% 0%, 90% 0%, 80% 50%, 90% 100%, 0% 100% );
 }
 
-.css_s_highlight
-{
-  color: #f00; /* css_s_highlight means the song will be css_highlight in the exported file */
-}
-
-.css_highlight
-{
-  background-color: #f00;
-}
+.css_s_highlight { color: #f00; }
+.css_highlight { background-color: #f00; }
 
 .css_topButtons
 {
@@ -118,8 +97,9 @@
   font-size: 16px;
 }
 
-.css_setlist
+.css_setlist_pane
 {
+  align-items: center;
   margin: 0;
   padding: 0;
   width: 49.5%;
@@ -130,7 +110,7 @@
   float: left
 }
 
-.css_library
+.css_library_pane
 {
   margin: 0;
   padding: 0;
@@ -142,33 +122,56 @@
   float: right
 }
 
+.css_editSong
+{
+  padding: 10px;
+  font-size: 14px;
+  text-align: left;
+  background-color: #ddf;
+  border: 1px solid black;
+  font-family: "Lucida Console", "Courier New", monospace;
+}
+
+
 </style>
 </head>
-
 <body align="center">
+<section>
+<div id='setlistpane' class='css_setlist_pane'>
+Set List <br>
 <input type='file' class='css_menuButton' id='openSetAction' style='display:none'>
 <button class='css_menuButton' id='newSetButton'        onclick='newSetlist();'>New</button>
 <button class='css_menuButton' id='openSetButton'       onclick='openSetlist();'>Open</button>
 <button class='css_menuButton' id='saveSetButton'       onclick='saveSetlist();'>Save</button>
-<input type='file' class='css_menuButton' id='openLibraryAction' style='display:none'>
-<button class='css_menuButton' id='openLibraryButton'   onclick='openLibrary();'>Open Library</button>
-<hr>
+
 <button class='css_modeButton' id='modeAddButton'       onclick='changeMode( MODE_ADD );'>Add</button>
 <button class='css_modeButton' id='modeDeleteButton'    onclick='changeMode( MODE_DELETE );'>Delete</button>
 <button class='css_modeButton' id='modeMoveButton'      onclick='changeMode( MODE_MOVE );'>Move</button>
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
 <hr>
-<section>
-<div id='setlist' class='css_setlist'> </div>
-<div id='library' class='css_library'> </div>
+<div id='setlist'> </div>
+</div>
+
+<div id='library_pane' class='css_library_pane'>
+Library <br>
+<input type='file' class='css_menuButton' id='addLibraryAction' style='display:none'>
+<button class='css_menuButton' id='newLibraryButton'  onclick='newLibrary();'>New</button>
+<button class='css_menuButton' id='addLibraryButton'  onclick='addLibrary();'>Open/Add</button>
+<button class='css_menuButton' id='saveLibraryButton' onclick='saveLibrary();'>Save</button>
+<button class='css_modeButton' id='modeEditButton'    onclick='changeMode( MODE_EDIT );'>Edit</button>
+
+<hr>
+<div id='library'> </div>
+</div>
 </section>
 
 <script>
 var curSet, curSong; // The cursor for various operations
 var editedFlag = false;
-var songLibrary;    // object of LibrarySong[]
+var songLibrary = {};    // object of LibrarySong[]
 var curSetList;
+var editSong; // song we're editing if MODE_EDIT
 
 // Constants.
 const MODE_NONE       = 0;
@@ -177,42 +180,11 @@ const MODE_DELETE     = 2;
 const MODE_MOVE       = 3;
 const MODE_MEDLEY     = 4;
 const MODE_HIGHLIGHT  = 5;
-
-const SET_RENAME  = 0;
-const SET_INSERT  = 1;
-const SET_DELETE  = 2;
+const MODE_EDIT       = 6; // edit library
 
 var operationMode = MODE_NONE;
 
-window.onload = setListInit;
-
-////////////////////
-// API sim for debug
-////////////////////
-
-function randInt( min, max ) { return Math.floor( Math.random() * ( max - min ) ) + min; }
-
-// From https://javascript.plainenglish.io/how-to-deep-copy-objects-and-arrays-in-javascript-7c911359b089
-function deepCopy( inObject )
-{
-  let outObject, key;
-
-  if( typeof inObject !== "object" || inObject === null )
-    return inObject;
-
-  outObject = Array.isArray( inObject ) ? [] : {};
-
-  for( key in inObject )
-    outObject[ key ] = deepCopy( inObject[ key ] );
-
-  return outObject
-}
-
 //////////////////////////// //////////////////////////// ////////////////////////////
-//////////////////////////// //////////////////////////// ////////////////////////////
-//////////////////////////// //////////////////////////// ////////////////////////////
-//////////////////////////// //////////////////////////// ////////////////////////////
-
 class LibrarySong
 {
   constructor( name, artist )
@@ -259,6 +231,17 @@ class SetList
     this.sets = [];
     this.sets.push( new Set() );
   }
+}
+
+//////////////////////////// //////////////////////////// ////////////////////////////
+window.onload = setListInit;
+
+function setListInit()
+{
+  newSetlist();
+  getDefaultLibrary();
+  document.getElementById( 'openSetAction' ).addEventListener( 'change', openSetFile, false );
+  document.getElementById( 'addLibraryAction' ).addEventListener( 'change', addLibraryAction, false );
 }
 
 // get the cursor element.
@@ -386,6 +369,7 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
 function libSongClick( songId )
 {
   if( operationMode == MODE_ADD )
+  {
     if( curSet != undefined )
     {
       var libSong = songLibrary[ songId ];
@@ -404,6 +388,12 @@ function libSongClick( songId )
       editedFlag = true;
       generateHTML();
     }
+  }
+  else if( operationMode == MODE_EDIT )
+  {
+    editSong = songLibrary[ songId ];
+    generateLibraryHTML();
+  }
 }
 
 function setRename( setIndex )
@@ -417,12 +407,6 @@ function setRename( setIndex )
   }
 
   generateHTML();
-}
-
-function setClicked( setName )
-{
-  curSetList = deepCopy( setLists[ setName ] );
-  changeMode( MODE_NONE );
 }
 
 function setAdd()
@@ -472,7 +456,7 @@ function generateHTML()
 
   var elem = getCurrentElement();
   if( elem )
-    elem.classList.add( 'css_highlight' ); // indicate cursor
+    elem.classList.add( 'css_highlight' ); // Hndicate cursor
 
   if( editedFlag )
     document.getElementById( 'saveSetButton' ).classList.add( 'css_highlight' );
@@ -482,22 +466,42 @@ function generateHTML()
 
 function generateLibraryHTML()
 {
-  var t = []; // temp array
-  for( const[ key, value ] of Object.entries( songLibrary ) )
-    t.push( value );
-  
-  t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );
-  var ll = undefined;
-  var tmpHtml = "Song Library";
-  for( var i = 0;i < t.length;i++ )
+  if( ( operationMode == MODE_EDIT ) && ( editSong ) )
   {
-    var cl = t[ i ].id[ 0 ];
-    if( cl != ll )
-    {
-      ll = cl;
-      tmpHtml += "<br><br>" + cl + " ";
-    }
-    tmpHtml += "<button id='" + t[ i ].id + "' class='css_librarySong' onclick=\"libSongClick('" + t[ i ].id + "')\">" + t[ i ].name + "</button>\n";
+    tmpHtml = "<div contenteditable='true' class='css_editSong'>" + editSong.name + "</div>";
+    tmpHtml += "<div contenteditable='true' class='css_editSong'>" + editSong.artist + "</div>";
+    var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
+    tmpHtml += "<div contenteditable='true' class='css_editSong'>" + lyrics + "</div>";
+  }
+  else
+  {
+    var t = []; // Array for sorting.
+    for( const[ key, value ] of Object.entries( songLibrary ) )
+      t.push( value );
+
+    t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );
+    var ll = "";
+    var tmpHtml = "";
+    var firstTime = true;
+
+    if( t.length) 
+      for( var i = 0;i < t.length;i++ )
+      {
+        var cl = t[ i ].id[ 0 ];
+        if( cl != ll )
+        {
+          ll = cl;
+          if( !firstTime )
+            tmpHtml += "<br><br>" + cl + " ";
+          else
+            tmpHtml += cl + " ";
+
+          firstTime = false;
+        }
+        tmpHtml += "<button id='" + t[ i ].id + "' class='css_librarySong' onclick=\"libSongClick('" + t[ i ].id + "')\">" + t[ i ].name + "</button>\n";
+      }
+    else
+      tmpHtml += "Empty.";
   }
   document.getElementById( 'library' ).innerHTML = tmpHtml;
 }
@@ -508,8 +512,8 @@ function newSetlist()
   if( editedFlag )
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
-  editedFlag = false;
 
+  editedFlag = false;
   curSetList = new SetList( "SL" );
   generateHTML();
 }
@@ -519,14 +523,78 @@ function openSetlist()
   if( editedFlag )
     if( !window.confirm( "Unsaved Edits. Continue?" ) )
       return;
-  editedFlag = false;
 
+  editedFlag = false;
   document.getElementById( 'openSetAction' ).click();
 }
 
-function openLibrary()
+function getDefaultLibrary()
 {
-  document.getElementById( 'openLibraryAction' ).click();
+  var rq = new XMLHttpRequest();
+  rq.open( 'GET', 'http://gbi.vinoski.net/lyricLibrary.json', true );
+  rq.send( null );
+  rq.onreadystatechange = function()
+  {
+    if( rq.readyState === 4 && rq.status === 200 )
+    {
+      var type = rq.getResponseHeader( 'Content-Type' );
+      if( type.indexOf( "text" ) !== 1 )
+      {
+        songLibrary = JSON.parse( rq.responseText );
+        generateLibraryHTML();
+      }
+    }
+  }
+}
+
+function openSetFile( e )
+{
+  var file = e.target.files[ 0 ];
+  if( !file )
+    return;
+  var reader = new FileReader();
+  reader.onload = function( e )
+  {
+    var lines = e.target.result.split( "\n" ); // Line 2 is JSON of the setList
+    var parsed = JSON.parse( lines[ 1 ] );
+    curSetList = parsed;
+    generateHTML();
+    document.getElementById( 'openSetAction' ).value = null;
+  }
+
+  reader.readAsText( file );
+}
+
+// Library stuff
+function newLibrary()
+{
+  songLibrary = {};
+  generateLibraryHTML();
+}
+
+function addLibrary()
+{
+  document.getElementById( 'addLibraryAction' ).click(); // 2nd step so we can css the button.
+}
+
+function addLibraryAction( e )
+{
+  var file = e.target.files[ 0 ];
+  if( !file )
+    return;
+  var reader = new FileReader();
+  reader.onload = function( e )
+  {
+    var parsed = JSON.parse( e.target.result );
+    // add to library
+    for( const[ key, v ] of Object.entries( parsed ) )
+      songLibrary[ v.id ] = v;
+
+    document.getElementById( 'addLibraryAction' ).value = null;
+    generateLibraryHTML();
+  }
+
+  reader.readAsText( file );
 }
 
 // this are just big string literals. Put here to make the export function more readable
@@ -847,7 +915,6 @@ function saveSetlist()
     setFile += "<hr><div class='setname'>" + curSetList.sets[ setIndex ].name + "</div>\n";
 
     var inMedley = false;
-
     for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
     {
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
@@ -903,7 +970,7 @@ function saveSetlist()
         }
         // Bold lines starting with !
         else if( line.substring( 0, 1 ) == "!" )
-          setFile += "<b>- " + line.substring( 1 ) + "-</b><br>\n"
+          setFile += "<b>- " + line.substring( 1 ) + "-</b><br>\n";
         // Ignore 2nd line if empty. It's unnecessary space in the html
         else if( songLine > 1 || line != "\n" ) // add spaces
         {
@@ -951,14 +1018,28 @@ function saveSetlist()
   return true;
 }
 
+function saveLibrary()
+{
+  var libFile = JSON.stringify( songLibrary );
+
+  // provide URL for abuser to download set.
+  const a = document.createElement( 'a' );
+  const file = new Blob( [ libFile ], { type: 'text/plain' } );
+  
+  a.href = URL.createObjectURL( file );
+  a.download = "songLibrary.json";
+  a.click();
+
+	URL.revokeObjectURL( a.href );
+}
+
 function changeMode( mode )
 {
+  editSong = undefined;
+
   operationMode = ( mode == operationMode ) ? MODE_NONE : mode;
 
   var buttons = document.getElementsByClassName( 'css_modeButton' );
-  for( i = 0;i < buttons.length;i++ )
-    buttons[ i ].classList.remove( 'css_highlight' );
-  buttons = document.getElementsByClassName( 'css_menuButton' );
   for( i = 0;i < buttons.length;i++ )
     buttons[ i ].classList.remove( 'css_highlight' );
 
@@ -972,6 +1053,7 @@ function changeMode( mode )
       case MODE_MOVE:       elem = document.getElementById( 'modeMoveButton' );       break;
       case MODE_MEDLEY:     elem = document.getElementById( 'modeMedleyButton' );     break;
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
+      case MODE_EDIT:       elem = document.getElementById( 'modeEditButton' );       break;
     }
     elem.classList.add( 'css_highlight' );
   }
@@ -980,70 +1062,9 @@ function changeMode( mode )
   curSong = undefined;
 
   generateHTML();
+  generateLibraryHTML();
 }
 
-function setListInit()
-{
-  newSetlist();
-  document.getElementById( 'openSetAction' ).addEventListener( 'change', openSetFile, false );
-  document.getElementById( 'openLibraryAction' ).addEventListener( 'change', openLibraryFile, false );
-
-  getDefaultLibrary();
-}
-
-function getDefaultLibrary()
-{
-  // read text from URL location
-  var request = new XMLHttpRequest();
-  request.open( 'GET', 'http://gbi.vinoski.net/lyricLibrary.json', true );
-  request.send( null );
-  request.onreadystatechange = function ()
-  {
-    if (request.readyState === 4 && request.status === 200 )
-    {
-      var type = request.getResponseHeader( 'Content-Type' );
-      if( type.indexOf( "text" ) !== 1 )
-      {
-        songLibrary = JSON.parse( request.responseText );
-        generateLibraryHTML();
-      }
-    }
-  }
-}
-
-function openSetFile( e )
-{
-  var file = e.target.files[ 0 ];
-  if( !file )
-    return;
-  var reader = new FileReader();
-  reader.onload = function( e )
-  {
-    var lines = e.target.result.split( "\n" ); // line 2 is JSON of the setList
-    var parsed = JSON.parse( lines[ 1 ] );
-    curSetList = parsed;
-    generateHTML();
-    document.getElementById( 'openSetAction' ).value = null;
-  };
-
-  reader.readAsText( file );
-}
-
-function openLibraryFile( e )
-{
-  var file = e.target.files[ 0 ];
-  if( !file )
-    return;
-  var reader = new FileReader();
-  reader.onload = function( e )
-  {
-    var parsed = JSON.parse( e.target.result );
-    songLibrary = parsed;
-    generateLibraryHTML();
-  };
-
-  reader.readAsText( file );
-}
 </script>
 </body>
 </html>
