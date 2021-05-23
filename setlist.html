@@ -173,7 +173,7 @@ var slEditedFlag = false;
 var libEditedFlag = false;
 var songLibrary = {}; // object of LibrarySong[]
 var curSetList;
-var editSong; // song we're editing if MODE_EDIT
+var editSong; // Song we're editing if MODE_EDIT
 
 // Constants.
 const MODE_NONE       = 0;
@@ -182,9 +182,10 @@ const MODE_DELETE     = 2;
 const MODE_MOVE       = 3;
 const MODE_MEDLEY     = 4;
 const MODE_HIGHLIGHT  = 5;
-const MODE_EDIT       = 6; // edit library
-const MODE_DEL_LIB    = 7; // delete from library
-const MODE_ADD_LIB    = 8; // add to library
+// Library modes.
+const MODE_EDIT       = 6;
+const MODE_DEL_LIB    = 7;
+const MODE_ADD_LIB    = 8;
 
 var operationMode = MODE_NONE;
 
@@ -197,6 +198,7 @@ class LibrarySong
     this.artist = artist;
     this.id = this.name + '.' + this.artist; // Unique key for Library. 
     this.id = this.id.replace( / /g, "_" );  // replace spaces with _
+    this.id = this.id.replace( /'/g, "_" );  // replace spaces with _
     this.lyrics = lyrics;
   }
 }
@@ -209,7 +211,7 @@ class SetListSong
     this.artist = artist;
     this.id = this.name + '.' + this.artist;
     this.id = this.id.replace( / /g, "_" );
-
+    this.id = this.id.replace( /'/g, "_" );
     this.css_highlight = false;
     this.medley = false;
   }
@@ -221,7 +223,6 @@ class Set
   {
     if( !name )
       name = "Set";
-
     this.name = name;
     this.songs = []; // SetListSong[]
   }
@@ -237,7 +238,8 @@ class SetList
   }
 }
 
-//////////////////////////// //////////////////////////// ////////////////////////////
+////////////////////////////
+////////////////////////////
 window.onload = setListInit;
 
 function setListInit()
@@ -248,7 +250,7 @@ function setListInit()
   document.getElementById( 'addLibraryAction' ).addEventListener( 'change', addLibraryAction, false );
 }
 
-// get the cursor element.
+// Get the cursor element.
 function getCurrentElement()
 {
   var elemId, elem;
@@ -427,7 +429,6 @@ function setAdd()
 }
 
 /////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
 function generateSetlistHTML()
 {
   var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name  + "</div>";
@@ -569,9 +570,30 @@ function openSetFile( e )
   var reader = new FileReader();
   reader.onload = function( e )
   {
-    var lines = e.target.result.split( "\n" ); // Line 2 is JSON of the setList
-    var parsed = JSON.parse( lines[ 1 ] );
-    curSetList = parsed;
+    var lines = e.target.result.split( "\n" ); // Line 2->n is JSON of the setList
+    var jsonPortion = ""; // setlist json beings with { in column 0 and ends with } in column 0.
+    var firstLine = true;
+    var success = false;
+    for( line of lines )
+    {
+      if( firstLine )
+      {
+        firstLine = false; // first line is opening comment
+        continue;
+      }
+
+      jsonPortion += line;
+      if( line == "}" )
+      {
+        success = true;
+        break;
+      }
+    }
+    if( success )
+    {
+      var parsed = JSON.parse( jsonPortion );
+      curSetList = parsed;
+    }
     generateSetlistHTML();
     document.getElementById( 'openSetAction' ).value = null;
   }
@@ -587,10 +609,7 @@ function newLibrary()
   generateLibraryHTML();
 }
 
-function addLibrary()
-{
-  document.getElementById( 'addLibraryAction' ).click(); // 2nd step so we can css the button.
-}
+function addLibrary() { document.getElementById( 'addLibraryAction' ).click(); } // 2nd step so we can css the button.
 
 function addLibraryAction( e )
 {
@@ -631,6 +650,11 @@ function htmlConstStrings( index )
     outline: none;
     font-size: 16px;
     transition: 0.2s;
+  }
+
+  .fixedFont
+  {
+    font-family: monospace;
   }
 
   .panel
@@ -683,6 +707,7 @@ function htmlConstStrings( index )
   </head>
 
   <body align="center">
+  <button class="css_topButtons" id="fontButtonFixed" onclick="fontFixed();">Fixed</button>
   <button class="css_topButtons" id="fontButton+" onclick="fontPlus();">Font +</button>
   <button class="css_topButtons" id="fontButton-" onclick="fontMinus();">Font -</button>
   <button id="fontSizeButton">Size</button>
@@ -697,6 +722,21 @@ case 1:
 const minFont = 14
 const maxFont = 24;
 var fontSize = 16;
+
+var fixed = false;
+
+function fontFixed()
+{
+  fixed = !fixed;
+
+  var panels = document.getElementsByClassName( "panel" );
+
+  for( var i = 0;i < panels.length;i++ )
+    if( fixed )
+      panels[ i ].classList.add( "fixedFont" );
+    else
+      panels[ i ].classList.remove( "fixedFont" );
+}
 
 function fontPlus()
 {
@@ -914,16 +954,13 @@ displaySet( DISPLAY_LARGE );
 
 function saveSetlist()
 {
-  var setFile = "<!--\n";
-  setFile += JSON.stringify( curSetList );
-  setFile += "\n-->";
-
-  setFile += "<!DOCTYPE html> <html> <head> <meta name='viewport' content='width=device-width, initial-scale=1'>";
+  var setFile = "<!--\n" + JSON.stringify( curSetList, null, "  " ) + "\n-->";
+  setFile += "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>";
   setFile += "<title>" + curSetList.name + "</title>";
   setFile += htmlConstStrings( 0 );
 
   var ffState = false; // Fixed Font state
-
+  var missingFiles = false;
   // Songs
   for( var setIndex = 0;setIndex < curSetList.sets.length;setIndex++ )
   {
@@ -933,8 +970,16 @@ function saveSetlist()
     for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
     {
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
-      var ffManual = false;
-
+      if( !songLibrary[ sng.id ] )
+      {
+        console.log( "'" + sng.id + "' not in lib." );
+        if( missingFiles == false )
+        {
+          missingFiles = true; // Only alert once
+          alert( "'" + sng.name + "' not in library." );
+        }
+        continue;
+      }
       var fLines = songLibrary[ sng.id ].lyrics.split( "\n" );
 
       var classString = "accordion";
@@ -957,34 +1002,23 @@ function saveSetlist()
         inMedley = false;
       }
       setFile += "<button class='" + classString + "'>";
-      setFile += (songIndex + 1).toString() + ". " + sng.name + "</button>\n"; // tbd, include artist if present
+      setFile += ( songIndex + 1 ).toString() + ". " + sng.name + "</button>\n"; // tbd, include artist if present
       setFile += "<div class='panel'>\n";
 
       for( line of fLines )
       {
-        // if tablature or chords. "E|", "A|" etc or "I: A E D", "C: A D". Use a fixed font.
-        var c2 = line.substring( 1, 2 );
-        ffAuto = ( c2 == "|" || c2 == ":" ) ? true : false;
-
-        if( ffAuto || ffManual ) // We want to use a fixed font?
+        curFixedFontState = ( ( line[ 1 ] == "|" ) || ( line[ 1 ] == ":" ) ) ? true : false;
+        if( curFixedFontState != ffState )
         {
-          if( !ffState )
-          {
+          if( curFixedFontState == true )
             setFile += "<font style='font-family:courier;'>\n";
-            ffState = true;
-          }
-        }
-        else if( ffState ) // Don't want fixed font. Fixed is harder to read for lyrics.
-        {
-          setFile += "</font>\n";
-          ffState = false;
+          else
+            setFile += "</font>\n";
+          ffState = curFixedFontState;
+          console.log( ffState, curFixedFontState );
         }
 
-        // Bold lines starting with !
-        if( line.substring( 0, 1 ) == "!" )
-          setFile += "<b>- " + line.substring( 1 ) + "-</b><br>\n";
-        // Ignore 2nd line if empty. It's unnecessary space in the html
-        else if( line != "\n" ) // add spaces
+        if( line != "\n" ) // add spaces
         {
           var nLine = "";
           var numSpaces = 0;
@@ -1007,8 +1041,8 @@ function saveSetlist()
           setFile += nLine + "<br>\n";
         }
       }
-      if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
-        setFile += "<font size='5'> &#8595;</font>";  // Big down arrow
+      // if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
+      //   setFile += "<font size='5'> &#8595;</font>";  // Big down arrow
       setFile += "</div>\n\n";
     }
   }
@@ -1033,11 +1067,11 @@ function saveSetlist()
 function saveLibrary()
 {
   // Provide URL for abuser to download set.
-  const file = new Blob( [ JSON.stringify( songLibrary ) ], { type: 'text/plain' } );
+  const file = new Blob( [ JSON.stringify( songLibrary, null, '  ' ) ], { type: 'text/plain' } );
 
   const a = document.createElement( 'a' );
   a.href = URL.createObjectURL( file );
-  a.download = "songLibrary.json";
+  a.download = "lyricLibrary.json";
   a.click();
   URL.revokeObjectURL( a.href );
   libEditedFlag = false;
@@ -1056,7 +1090,6 @@ function changeMode( mode )
     delete( songLibrary[ editSong.id ] );
     if( editedSong.id != "Name.Artist" ) // That's the default name when adding, don't add.
     {
-      //console.log( editedSong );
       // tbd, check for a change before setting libEditedFlag.
       songLibrary[ editedSong.id ] = editedSong;
       libEditedFlag = true;
@@ -1069,7 +1102,7 @@ function changeMode( mode )
   // Adding a song to the library. Create an empty one and change to MODE_EDIT
   if( operationMode == MODE_ADD_LIB )
   {
-    editSong = new LibrarySong( "Name", "Artist", "Lyrics..." );
+    editSong = new LibrarySong( "Name", "Artist", "Lyrics" );
     operationMode = MODE_EDIT;
   }
 

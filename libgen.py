@@ -2,6 +2,9 @@
 # Scan local directory for txt lyric files and put them into lyricLibrary.json
 # The first line is assumed to be the song name, the 2nd to be a space, and 
 # the rest is assumed to be lyrics. We don't expect artist information to be present
+
+# Duplicate song names are not allowed.
+
 import os, glob, json
 
 class Song( object ):
@@ -47,9 +50,10 @@ for s in songLibrary:
   libSong = {}
   libSong[ "name" ] = s.songName
   libSong[ "artist" ] = "Artist"
-  lyrics = ""
+  lyrics = ""# "<p style='font-family:verdana'>";
   for l in fLines[ 2 : ]: # prune the first two lines. The song name and space below.
     lyrics += l
+  #lyrics += "</p>";
 
   libSong[ "lyrics" ] = lyrics; # skip title and following space
   id = ( libSong[ "name" ] + "." + libSong[ "artist" ] )
