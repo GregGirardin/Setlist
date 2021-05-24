@@ -445,11 +445,11 @@ function generateSetlistHTML()
       var classes = 'css_setListSong';
       if( s.songs[ j ].css_highlight )
         classes += ' css_s_highlight';
-      if( ( s.songs[ j ].medley ) && medleyState == false )
+      if( s.songs[ j ].medley && medleyState == false )
         classes += ' css_medleyStart';
-      else if( ( s.songs[ j ].medley ) && medleyState == true ) 
+      else if( s.songs[ j ].medley && medleyState == true ) 
         classes += ' css_medleyCont';
-      else if( ( !s.songs[ j ].medley ) && medleyState == true ) 
+      else if( !s.songs[ j ].medley && medleyState == true ) 
         classes += ' css_medleyEnd';
       medleyState = s.songs[ j ].medley;
 
@@ -466,7 +466,7 @@ function generateSetlistHTML()
 
   var elem = getCurrentElement();
   if( elem )
-    elem.classList.add( 'css_highlight' ); // Hndicate cursor
+    elem.classList.add( 'css_highlight' ); // Indicate cursor
 
   if( slEditedFlag )
     document.getElementById( 'saveSetButton' ).classList.add( 'css_highlight' );
