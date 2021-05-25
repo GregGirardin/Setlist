@@ -54,9 +54,9 @@
 .css_setClass
 {
   border: 2px solid white;
-  background-color: #ddf;
+  background-color: #ccf;
   color: #000;
-  padding: 6px;
+  padding: 2px;
   text-align: center;
   font-size: 16px;
 }
@@ -99,7 +99,7 @@
 
 .css_setlist_pane
 {
-  align-items: center;
+  align-items: left;
   margin: 0;
   padding: 0;
   width: 49.5%;
@@ -112,12 +112,21 @@
 
 .css_library_pane
 {
+  align-items: left;
   margin: 0;
   padding: 0;
   width: 49.5%;
   background-color: #f1f1f1;
   border: 1px solid black;
   float: right
+}
+
+.css_scratch_pane
+{
+  align-items: left;
+  margin: 0;
+  padding: 0;
+  background-color: #f1f1f1;
 }
 
 .css_library
@@ -138,16 +147,14 @@
 
 </style>
 </head>
-<body align="center">
+<body align="left">
 <section>
 <div id='setlistpane' class='css_setlist_pane'>
-Set List <br>
 <input type='file' class='css_menuButton' id='openSetAction' style='display:none'>
 <button class='css_menuButton' id='newSetButton'        onclick='newSetlist();'>New</button>
 <button class='css_menuButton' id='openSetButton'       onclick='openSetlist();'>Open</button>
 <button class='css_menuButton' id='saveSetButton'       onclick='saveSetlist();'>Save</button>
 
-<button class='css_modeButton' id='modeDeleteButton'    onclick='changeMode( MODE_DELETE );'>Delete</button>
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
 <hr>
@@ -169,22 +176,21 @@ Library <br>
 </section>
 
 <script>
-var curSet, curSong; // The cursor for various operations
 var slEditedFlag = false;
 var libEditedFlag = false;
+var scratchPad = [];
 var songLibrary = {}; // object of LibrarySong
 var curSetList; // a SetList
 var editSong; // LibrarySong we're editing if MODE_EDIT
 
 // Constants.
 const MODE_NONE       = 0;
-const MODE_DELETE     = 2;
-const MODE_MEDLEY     = 4;
-const MODE_HIGHLIGHT  = 5;
+const MODE_MEDLEY     = 1;
+const MODE_HIGHLIGHT  = 2;
 // Library modes.
-const MODE_EDIT       = 6;
-const MODE_DEL_LIB    = 7;
-const MODE_ADD_LIB    = 8;
+const MODE_EDIT       = 3;
+const MODE_DEL_LIB    = 4;
+const MODE_ADD_LIB    = 5;
 
 var operationMode = MODE_NONE;
 
@@ -261,7 +267,6 @@ function dragElem( ev )
 
 // Handle a song being dropped onto a setlist file.
 // Songs can be dragged from within the setlist to move them or from the Library to add them.
-
 function dropElem( ev )
 {
   ev.preventDefault();
@@ -327,24 +332,24 @@ function dropElem( ev )
       curSetList.sets.splice( fromSet, 1 );
     }
   }
+  else if( ev.target.id == "trashCan" )
+  {
+    if( dragElem.substring( 0, 12 ) == "setListSong." )
+    {
+      var indexes = dragElem.substring( 12, ).split( "." );
+      var delSet = parseInt( indexes[ 0 ] );
+      var delSong = parseInt( indexes[ 1 ] );
+
+      curSetList.sets[ delSet ].songs.splice( delSong, 1 );
+    }
+    else if( dragElem.substring( 0, 11 ) == "setListSet." )
+    {
+      var delSet = parseInt( dragElem.substring( 11, ) );
+      curSetList.sets.splice( delSet, 1 );
+    }
+  }
 
   generateSetlistHTML();
-}
-
-// Get the cursor element.
-function getCurrentElement()
-{
-  var elemId, elem;
-
-  if( curSet == undefined )
-    return undefined;
-
-  elemId = ( curSong == undefined ) ? "setListSet." + curSet : "setListSong." + curSet + "." + curSong;
-
-  if( elemId )
-    elem = document.getElementById( elemId );
-  
-  return elem;
 }
 
 function setSetlistName()
@@ -363,14 +368,7 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
   var cs = curSetList.sets[ setIndex ].songs[ songIndex ]; // clicked song.
   slEditedFlag = true;
 
-  if( operationMode == MODE_DELETE )
-  {
-    if( songIndex == undefined )
-      curSetList.sets.splice( setIndex, 1 );
-    else
-      curSetList.sets[ setIndex ].songs.splice( songIndex, 1 );
-  }
-  else if( operationMode == MODE_HIGHLIGHT )
+  if( operationMode == MODE_HIGHLIGHT )
     cs.css_highlight = !cs.css_highlight;
   else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
@@ -381,8 +379,11 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
   generateSetlistHTML(); 
 }
 
+/////////////// /////////////// /////////////// ///////////////
 // Handle actions when a song in the library is clicked.
 // Library songs can be edited or deleted.
+/////////////// /////////////// /////////////// ///////////////
+
 function libSongClick( songId )
 {
   if( operationMode == MODE_EDIT )
@@ -405,7 +406,7 @@ function newSetlist()
       return;
 
   slEditedFlag = false;
-  curSetList = new SetList( "SL" );
+  curSetList = new SetList( "Set List" );
   generateSetlistHTML();
 }
 
@@ -462,18 +463,15 @@ function generateSetlistHTML()
                   s.songs[ j ].name + "</button>\n";
     }
     tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
-                "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'" +
+                "' class='css_setListSong' onclick='slClick( " + i + ", " + j + " )'" +
                 "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button>\n";
 
     tempHtml += "<br>";
   }
-  tempHtml += "<button class='css_setClass' onclick='setAdd()'> + </button>\n"; // Add a + to create a new set
+  tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n"; // Add a + to create a new set
+  tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n"; // Trash can for deleting stuff.
 
   document.getElementById( 'setlist' ).innerHTML = tempHtml;
-
-  var elem = getCurrentElement();
-  if( elem )
-    elem.classList.add( 'css_highlight' ); // Indicate cursor
 
   if( slEditedFlag )
     document.getElementById( 'saveSetButton' ).classList.add( 'css_highlight' );
@@ -488,9 +486,12 @@ function changeMode( mode )
   // We were editing a library file. Save the changes.
   if( ( operationMode == MODE_EDIT ) && editSong )
   {
-    var editedSong = new LibrarySong( document.getElementById( "editSongName" ).innerHTML,
-                                      document.getElementById( "editSongArtist" ).innerHTML,
-                                      document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
+    var name = document.getElementById( "editSongName" ).innerHTML; // strip HTML tags in the name and artist
+    name = name.replace(/(<([^>]+)>)/gi, "");
+    var artist = document.getElementById( "editSongArtist" ).innerHTML;
+    artist = artist.replace(/(<([^>]+)>)/gi, "");
+    // Allow html in the lyrics.
+    var editedSong = new LibrarySong( name, artist, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
 
     delete( songLibrary[ editSong.id ] );
     if( editedSong.id != "Name.Artist" ) // That's the default name when adding, don't add.
@@ -523,7 +524,6 @@ function changeMode( mode )
     var elem;
     switch( operationMode )
     {
-      case MODE_DELETE:     elem = document.getElementById( 'modeDeleteButton' );     break;
       case MODE_MEDLEY:     elem = document.getElementById( 'modeMedleyButton' );     break;
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
       case MODE_EDIT:       elem = document.getElementById( 'modeEditButton' );       break;
@@ -648,7 +648,6 @@ function generateLibraryHTML()
 
           firstTime = false;
         }
-        //tmpHtml += "<button id='" + t[ i ].id + "' class='css_librarySong' onclick=\"libSongClick('" + t[ i ].id + "')\">" + t[ i ].name + "</button>\n";
         tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
                    "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
       }
