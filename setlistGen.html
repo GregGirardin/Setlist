@@ -168,8 +168,10 @@
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
 <button class='css_modeButton' id='clipboard'           onclick='changeMode( MODE_CLIPBOARD );'>Clipboard</button>
+<button class='css_modeButton' id='Help'                onclick='toggleHelp();'>Help</button>
 <hr>
 <div id='setlist'> </div>
+<div id='help'></div>
 </div>
 
 <div id='library_pane' class='css_library_pane'>
@@ -770,8 +772,8 @@ function htmlConstStrings( index )
 */}.toString().slice( 14, -3 ) ) ;
 break;
 
-case 1:
-  return( function(){/* 
+  case 1:
+    return( function(){/* 
 <script>
 const minFont = 14
 const maxFont = 24;
@@ -1000,6 +1002,32 @@ for( var i = 0;i < acc.length;i++ )
 }
 displaySet( DISPLAY_LARGE );
 */}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" ); // little hack because certain tags confuse the browser.
+    break;
+
+  case 2:
+    return( function(){/* 
+    <br>
+    <h2> Set List Creator </h2>
+    Create a new set list with 'New'. Click on the set list name to rename it.<br>
+    Add additional sets with 'Add Set'. Click on the set names to rename them.<br>
+    <br>
+    Drag songs from the Library in the right pane to the desired location in the set. The songs (and sets) can be rearranged
+    by dragging them. Delete songs or sets by dragging them to the Trash.<br>
+    Save the set with 'Save'. Edit a saved set with 'Open'.<br>
+    <br>
+    The Clipboard is a hidden set that is not displayed in the rendered set list file. It is provided
+    to make the set list a bit easier to manage. Songs can be dragged to and from the Clipboard as with
+    any other set. In Clipboard Mode songs are added to the Clipboard from the Library as you click on them.<br>
+    <br>
+    Songs that are part of a medley can be indicated with 'Medley' mode.<br>
+    Songs can be highlighted in red with 'Highlight' mode.<br>
+    <br>
+    A custom lyric library can be created with 'New' in the Library pane.
+    Add songs to the library with '+', or edit existing songs with 'Edit'. Then the new library
+    can be saved and opened later. When a library is opened it is merged with the existing library.
+    Delete songs from the library with 'Delete'. <br>
+    
+*/}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" ); // little hack because certain tags confuse the browser.
   break;
   }
 
@@ -1009,7 +1037,6 @@ displaySet( DISPLAY_LARGE );
 //////////////////////
 // Set List file mgmt
 //////////////////////
-
 function openSetlist()
 {
   if( slEditedFlag )
@@ -1017,7 +1044,7 @@ function openSetlist()
       return;
 
   slEditedFlag = false;
-  document.getElementById( 'openSetAction' ).click();
+  document.getElementById( 'openSetAction' ).click(); // this little hack is so we can css the open button
 }
 
 function openSetFile( e )
@@ -1043,16 +1070,27 @@ function openSetFile( e )
       jsonPortion += line;
       if( line == "}" )
       {
-        success = true;
+        success = true; // found the end of json.
         break;
       }
     }
     if( success )
     {
-      var parsed = JSON.parse( jsonPortion );
-      curSetList = parsed;
+      try
+      {
+        var parsed = JSON.parse( jsonPortion );
+        curSetList = parsed;
+      }
+      catch( error )
+      {
+        alert( error );
+      }
     }
+    else
+      alert( "Unable to parse setlist" );
+
     generateSetlistHTML();
+
     document.getElementById( 'openSetAction' ).value = null;
   }
 
@@ -1150,8 +1188,6 @@ function saveSetlist()
           setFile += nLine + "<br>\n";
         }
       }
-      // if( curSetList.sets[ setIndex ].songs[ songIndex ].medley )
-      //   setFile += "<font size='5'> &#8595;</font>";  // Big down arrow
       setFile += "</div>\n\n";
     }
   }
@@ -1172,6 +1208,21 @@ function saveSetlist()
   generateSetlistHTML();
   return true;
 }
+
+var helpState = false;
+function toggleHelp()
+{
+  helpState = !helpState;
+  var helpHtml = "";
+
+  if( helpState )
+    helpHtml = htmlConstStrings( 2 );
+
+  var helpElem = document.getElementById( 'help' );
+  helpElem.innerHTML = helpHtml;
+
+}
+
 
 </script>
 </body>
