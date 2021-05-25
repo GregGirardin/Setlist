@@ -61,6 +61,16 @@
   font-size: 16px;
 }
 
+.css_Clipboard
+{
+  border: 1px solid black;
+  background-color: #fff;
+  color: #000;
+  padding: 2px;
+  text-align: center;
+  font-size: 16px;
+}
+
 #setListName { font-size: 20px; }
 
 .css_medleyStart
@@ -157,12 +167,12 @@
 
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
+<button class='css_modeButton' id='clipboard'           onclick='changeMode( MODE_CLIPBOARD );'>Clipboard</button>
 <hr>
 <div id='setlist'> </div>
 </div>
 
 <div id='library_pane' class='css_library_pane'>
-Library <br>
 <input type='file' class='css_menuButton' id='addLibraryAction' style='display:none'>
 <button class='css_menuButton' id='newLibraryButton'  onclick='newLibrary();'>New</button>
 <button class='css_menuButton' id='addLibraryButton'  onclick='addLibrary();'>Open+</button>
@@ -187,10 +197,11 @@ var editSong; // LibrarySong we're editing if MODE_EDIT
 const MODE_NONE       = 0;
 const MODE_MEDLEY     = 1;
 const MODE_HIGHLIGHT  = 2;
+const MODE_CLIPBOARD  = 3;
 // Library modes.
-const MODE_EDIT       = 3;
-const MODE_DEL_LIB    = 4;
-const MODE_ADD_LIB    = 5;
+const MODE_EDIT       = 10;
+const MODE_DEL_LIB    = 11;
+const MODE_ADD_LIB    = 12;
 
 var operationMode = MODE_NONE;
 
@@ -240,6 +251,7 @@ class SetList
     this.name = name;
     this.sets = [];
     this.sets.push( new Set() );
+    this.sets.push( new Set( "Clipboard") );
   }
 }
 
@@ -247,6 +259,7 @@ class SetList
 //////////////////////////// //////////////////////////// ////////////////////////////
 window.onload = setListInit;
 
+/////////////// /////////////// /////////////// ///////////////
 function setListInit()
 {
   newSetlist();
@@ -255,18 +268,13 @@ function setListInit()
   document.getElementById( 'addLibraryAction' ).addEventListener( 'change', addLibraryAction, false );
 }
 
-function sl_allowDrop( ev )
-{
-  ev.preventDefault();
-}
+function sl_allowDrop( ev ) { ev.preventDefault(); }
+function dragElem( ev ) { ev.dataTransfer.setData( "dragElem", ev.target.id ); }
 
-function dragElem( ev )
-{
-  ev.dataTransfer.setData( "dragElem", ev.target.id );
-}
-
+/////////////// /////////////// /////////////// ///////////////
 // Handle a song being dropped onto a setlist file.
 // Songs can be dragged from within the setlist to move them or from the Library to add them.
+/////////////// /////////////// /////////////// ///////////////
 function dropElem( ev )
 {
   ev.preventDefault();
@@ -352,6 +360,7 @@ function dropElem( ev )
   generateSetlistHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 function setSetlistName()
 {
   var name = prompt( "Enter Setlist Name:", curSetList.name );
@@ -363,7 +372,8 @@ function setSetlistName()
   }
 }
 
-function slClick( setIndex, songIndex ) // A song or set was clicked.
+/////////////// /////////////// /////////////// ///////////////
+function setClick( setIndex, songIndex )
 {
   var cs = curSetList.sets[ setIndex ].songs[ songIndex ]; // clicked song.
   slEditedFlag = true;
@@ -373,9 +383,6 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
   else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
 
-  else if( songIndex == undefined )
-    setRename( setIndex );
-
   generateSetlistHTML(); 
 }
 
@@ -383,22 +390,24 @@ function slClick( setIndex, songIndex ) // A song or set was clicked.
 // Handle actions when a song in the library is clicked.
 // Library songs can be edited or deleted.
 /////////////// /////////////// /////////////// ///////////////
-
 function libSongClick( songId )
 {
   if( operationMode == MODE_EDIT )
-  {
     editSong = songLibrary[ songId ];
-    generateLibraryHTML();
-  }
   else if( operationMode == MODE_DEL_LIB )
   {
     libEditedFlag = true;
     delete( songLibrary[ songId ] );
-    generateLibraryHTML();
   }
+  else if( operationMode == MODE_CLIPBOARD )
+  {
+    curSetList.sets[ curSetList.sets.length - 1 ].songs.push( songLibrary[ songId ] );
+    generateSetlistHTML();
+  }
+  generateLibraryHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 function newSetlist()
 {
   if( slEditedFlag )
@@ -406,10 +415,12 @@ function newSetlist()
       return;
 
   slEditedFlag = false;
-  curSetList = new SetList( "Set List" );
+  curSetList = new SetList( "Set List Name" );
+
   generateSetlistHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 function setRename( setIndex )
 {
   var name = prompt( "Enter Set Name:", curSetList.sets[ setIndex ].name );
@@ -423,23 +434,32 @@ function setRename( setIndex )
   generateSetlistHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 function setAdd()
 {
-  curSetList.sets.push( new Set() );
-  slEditedFlag = true;
-  generateSetlistHTML();
+  if( curSetList.sets.length < 100 )
+  {
+    curSetList.sets.splice( curSetList.sets.length - 1, 0, new Set() );
+    slEditedFlag = true;
+    generateSetlistHTML();
+  }
+  else
+    alert( "Max set count reached" );
 }
 
-/////////////////////////////////////////////////////////////
+/////////////// /////////////// /////////////// ///////////////
 function generateSetlistHTML()
 {
-  var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name  + "</div>";
+  var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name + "</div>";
 
   for( var i = 0;i < curSetList.sets.length;i++ )
   {
     var s = curSetList.sets[ i ];
-    tempHtml += "<button id='setListSet." + i + "' class='css_setClass' onclick='slClick( " + i + ", undefined )'" +
-                "draggable='true' ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>" + s.name + "</button>\n";
+    if( i == curSetList.sets.length - 1 )
+      tempHtml += "<br><button class='css_Clipboard' > Clipboard </button>\n";
+    else
+      tempHtml += "<button id='setListSet." + i + "' class='css_setClass' onclick='setRename( " + i + " )' draggable='true' " +
+                  "ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>" + s.name + "</button>\n";
 
     var medleyState = false;
 
@@ -456,19 +476,18 @@ function generateSetlistHTML()
         classes += ' css_medleyEnd';
       medleyState = s.songs[ j ].medley;
 
-      //tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'>" + s.songs[ j ].name + "</button>\n";
       tempHtml += "<button id='setListSong." + i + "." + j +
-                  "' class='" + classes + "' onclick='slClick( " + i + ", " + j + " )'" +
+                  "' class='" + classes + "' onclick='setClick( " + i + ", " + j + " )'" +
                   " draggable='true' ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )''>" +
                   s.songs[ j ].name + "</button>\n";
     }
-    tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
-                "' class='css_setListSong' onclick='slClick( " + i + ", " + j + " )'" +
-                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button>\n";
 
-    tempHtml += "<br>";
+    tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
+                "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
+                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button><br>\n";
   }
-  tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n"; // Add a + to create a new set
+
+  tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n";
   tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n"; // Trash can for deleting stuff.
 
   document.getElementById( 'setlist' ).innerHTML = tempHtml;
@@ -528,12 +547,10 @@ function changeMode( mode )
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
       case MODE_EDIT:       elem = document.getElementById( 'modeEditButton' );       break;
       case MODE_DEL_LIB:    elem = document.getElementById( 'modeDelLibButton' );     break;
+      case MODE_CLIPBOARD:  elem = document.getElementById( 'clipboard' );            break;
     }
     elem.classList.add( 'css_highlight' );
   }
-
-  curSet = undefined;
-  curSong = undefined;
 
   generateSetlistHTML();
   generateLibraryHTML();
@@ -542,12 +559,9 @@ function changeMode( mode )
 //////////////// //////////////// //////////////// ////////////////
 // Library file management
 //////////////// //////////////// //////////////// ////////////////
-function addLibrary()
-{
-  // This extra step is so we can css the button.
-  document.getElementById( 'addLibraryAction' ).click();
-} 
+function addLibrary() { document.getElementById( 'addLibraryAction' ).click(); } // This extra step is so we can css the button.
 
+/////////////// /////////////// /////////////// ///////////////
 function newLibrary()
 {
   songLibrary = {};
@@ -555,6 +569,7 @@ function newLibrary()
   generateLibraryHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 function getDefaultLibrary()
 {
   var rq = new XMLHttpRequest();
@@ -572,6 +587,7 @@ function getDefaultLibrary()
       }
     }
   }
+  generateLibraryHTML();
 }
 
 // Open a library file (json) that will be merged into the current library.
@@ -595,8 +611,10 @@ function addLibraryAction( e )
   reader.readAsText( file );
 }
 
+/////////////// /////////////// /////////////// ///////////////
 // Present a dialog for the user to save the current library to a local file. 
 // Library is saved as json. TBD: zip it.
+/////////////// /////////////// /////////////// ///////////////
 function saveLibrary()
 {
   const file = new Blob( [ JSON.stringify( songLibrary, null, '  ' ) ], { type: 'text/plain' } );
@@ -610,10 +628,12 @@ function saveLibrary()
   generateLibraryHTML();
 }
 
+/////////////// /////////////// /////////////// ///////////////
 // generate the library pane.
 // 1) list of songs from the library that can be dragged into the set list 
 // or
 // 2) A library song we're editing.
+/////////////// /////////////// /////////////// ///////////////
 function generateLibraryHTML()
 {
   if( ( operationMode == MODE_EDIT ) && editSong )
@@ -652,7 +672,7 @@ function generateLibraryHTML()
                    "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
       }
     else
-      tmpHtml += "Empty.";
+      tmpHtml += "<h2>Please open a song library.</h2>";
   }
   document.getElementById( 'libraryDiv' ).innerHTML = tmpHtml;
 
@@ -662,8 +682,10 @@ function generateLibraryHTML()
     document.getElementById( 'saveLibraryButton' ).classList.remove( 'css_highlight' );
 }
 
+/////////////// /////////////// /////////////// ///////////////
 // This are just a couple big string literals for the generated output setlist html.
 // Put here to make the export function more readable
+/////////////// /////////////// /////////////// ///////////////
 function htmlConstStrings( index )
 {
   switch( index )
@@ -1037,7 +1059,9 @@ function openSetFile( e )
   reader.readAsText( file );
 }
 
+/////////////// /////////////// /////////////// ///////////////
 // Generate the Setlist html file and present a dialog for the user to save it.
+/////////////// /////////////// /////////////// ///////////////
 function saveSetlist()
 {
   var setFile = "<!--\n" + JSON.stringify( curSetList, null, "  " ) + "\n-->";
@@ -1048,7 +1072,7 @@ function saveSetlist()
   var ffState = false; // Fixed Font state
   var missingFiles = false;
   // Songs
-  for( var setIndex = 0;setIndex < curSetList.sets.length;setIndex++ )
+  for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
   {
     setFile += "<hr><div class='setname'>" + curSetList.sets[ setIndex ].name + "</div>\n";
 
