@@ -182,6 +182,7 @@
 <button class='css_menuButton' id='addLibSongButton'  onclick='changeMode( MODE_ADD_LIB );'>+</button>
 <button class='css_modeButton' id='modeEditButton'    onclick='changeMode( MODE_EDIT );'>Edit</button>
 <button class='css_modeButton' id='modeDelLibButton'  onclick='changeMode( MODE_DEL_LIB );'>Delete</button>
+<button class='css_modeButton' id='toggleLibViewMode' onclick='toggleLibViewMode( );'>Sort by</button>
 <hr>
 <div id='libraryDiv' class='css_library'> </div>
 </div>
@@ -200,17 +201,22 @@ const MODE_NONE       = 0;
 const MODE_MEDLEY     = 1;
 const MODE_HIGHLIGHT  = 2;
 const MODE_CLIPBOARD  = 3;
+
 // Library modes.
 const MODE_EDIT       = 10;
 const MODE_DEL_LIB    = 11;
 const MODE_ADD_LIB    = 12;
+
+const VIEW_MODE_SONG_NAME = 0;
+const VIEW_MODE_ARTIST_NAME = 1;
+const VIEW_MODE_KEY = 2;
 
 var operationMode = MODE_NONE;
 
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name, artist, lyrics=undefined )
+  constructor( name="", artist="", lyrics="", key="" )
   {
     this.name = name;
     this.artist = artist;
@@ -218,6 +224,7 @@ class LibrarySong
     this.id = this.id.replace( / /g, "_" );  // replace with _
     this.id = this.id.replace( /'/g, "_" ); 
     this.lyrics = lyrics;
+    this.key = key
   }
 }
 
@@ -486,7 +493,8 @@ function generateSetlistHTML()
 
     tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
                 "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
-                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button><br>\n";
+                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button>\n";
+    tempHtml += s.songs.length + "<br>\n";
   }
 
   tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n";
@@ -511,11 +519,13 @@ function changeMode( mode )
     name = name.replace(/(<([^>]+)>)/gi, "");
     var artist = document.getElementById( "editSongArtist" ).innerHTML;
     artist = artist.replace(/(<([^>]+)>)/gi, "");
+    var key = document.getElementById( "editSongKey" ).innerHTML;
+    key = key.replace(/(<([^>]+)>)/gi, "");
     // Allow html in the lyrics.
     var editedSong = new LibrarySong( name, artist, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
 
     delete( songLibrary[ editSong.id ] );
-    if( editedSong.id != "Name.Artist" ) // That's the default name when adding, don't add.
+    if( editedSong.id != "." ) // That's the default name when adding, don't add.
     {
       // tbd, check for a change before setting libEditedFlag.
       songLibrary[ editedSong.id ] = editedSong;
@@ -529,7 +539,7 @@ function changeMode( mode )
   // Adding a song to the library. Create an empty one and change to MODE_EDIT
   if( operationMode == MODE_ADD_LIB )
   {
-    editSong = new LibrarySong( "Name", "Artist", "Lyrics" );
+    editSong = new LibrarySong( );
     operationMode = MODE_EDIT;
   }
 
@@ -555,6 +565,27 @@ function changeMode( mode )
   }
 
   generateSetlistHTML();
+  generateLibraryHTML();
+}
+
+var libViewMode = VIEW_MODE_SONG_NAME;
+function toggleLibViewMode()
+{
+  libViewMode++;
+  if( libViewMode > VIEW_MODE_KEY )
+    libViewMode = VIEW_MODE_SONG_NAME;
+
+  var viewMode;
+  switch( libViewMode )
+  {
+    case VIEW_MODE_SONG_NAME: viewMode = "Song Name"; break;
+    case VIEW_MODE_ARTIST_NAME: viewMode = "Artist"; break;
+    case VIEW_MODE_KEY: viewMode = "Key"; break;
+  }
+
+  var elem = document.getElementById( "toggleLibViewMode" );
+  elem.innerHTML = viewMode;
+
   generateLibraryHTML();
 }
 
@@ -640,8 +671,14 @@ function generateLibraryHTML()
 {
   if( ( operationMode == MODE_EDIT ) && editSong )
   {
-    tmpHtml = "<div contenteditable='true' id='editSongName' class='css_editSong'>" + editSong.name + "</div>";
+    tmpHtml = "Song Name";
+    tmpHtml += "<div contenteditable='true' id='editSongName' class='css_editSong'>" + editSong.name + "</div>";
+    tmpHtml += "Artist";
     tmpHtml += "<div contenteditable='true' id='editSongArtist' class='css_editSong'>" + editSong.artist + "</div>";
+    tmpHtml += "Key";
+    tmpHtml += "<div contenteditable='true' id='editSongKey' class='css_editSong'>" + editSong.key + "</div>";
+
+    tmpHtml += "Lyrics";
     var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
     tmpHtml += "<div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
   }
@@ -651,15 +688,30 @@ function generateLibraryHTML()
     for( const[ key, value ] of Object.entries( songLibrary ) )
       t.push( value );
 
-    t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );
+        switch( libViewMode )
+        {
+          case VIEW_MODE_SONG_NAME: t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );; break;
+          case VIEW_MODE_ARTIST_NAME: t.sort( function( a, b ){ return ( a.artist > b.artist ) ? 1 : -1 } ); break;
+          case VIEW_MODE_KEY: t.sort( function( a, b ){ return ( a.key > b.key ) ? 1 : -1 } ); break;
+        }
+
     var ll = "";
     var tmpHtml = "";
     var firstTime = true;
 
-    if( t.length )
+    if( !t.length )
+      tmpHtml += "<h2>Please open a song library.</h2>";
+    else
       for( var i = 0;i < t.length;i++ )
       {
-        var cl = t[ i ].id[ 0 ];
+        var cl;
+        switch( libViewMode )
+        {
+          case VIEW_MODE_SONG_NAME: cl = t[ i ].id[ 0 ]; break;
+          case VIEW_MODE_ARTIST_NAME: cl = t[ i ].artist; break;
+          case VIEW_MODE_KEY: cl = t[ i ].key; break;
+        }
+
         if( cl != ll )
         {
           ll = cl;
@@ -673,8 +725,6 @@ function generateLibraryHTML()
         tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
                    "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
       }
-    else
-      tmpHtml += "<h2>Please open a song library.</h2>";
   }
   document.getElementById( 'libraryDiv' ).innerHTML = tmpHtml;
 
@@ -1220,9 +1270,7 @@ function toggleHelp()
 
   var helpElem = document.getElementById( 'help' );
   helpElem.innerHTML = helpHtml;
-
 }
-
 
 </script>
 </body>
