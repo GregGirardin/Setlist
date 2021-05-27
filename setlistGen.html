@@ -721,6 +721,8 @@ function generateLibraryHTML()
   {
     var tmpHtml = "<br>";
     var songName = pruneQuote( editSong.name );
+    if( !songName )
+      songName = "Name";
     var artist = editSong.artist;
     if( !artist )
       artist = "Artist";
