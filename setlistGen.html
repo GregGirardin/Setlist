@@ -167,7 +167,7 @@
 
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
-<button class='css_modeButton' id='clipboard'           onclick='changeMode( MODE_CLIPBOARD );'>Clipboard</button>
+<button class='css_modeButton' id='clipboard'           onclick='changeMode( MODE_CLIPBOARD );'>Add To Clipboard</button>
 <button class='css_modeButton' id='Help'                onclick='toggleHelp();'>Help</button>
 <hr>
 <div id='setlist'> </div>
@@ -455,7 +455,7 @@ function setRename( setIndex )
 /////////////// /////////////// /////////////// ///////////////
 function setAdd()
 {
-  if( curSetList.sets.length < 100 )
+  if( curSetList.sets.length < 10 )
   {
     curSetList.sets.splice( curSetList.sets.length - 1, 0, new Set() );
     slEditedFlag = true;
@@ -466,6 +466,7 @@ function setAdd()
 }
 
 /////////////// /////////////// /////////////// ///////////////
+var firstTimeSL = true;
 function generateSetlistHTML()
 {
   var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name + "</div>";
@@ -499,12 +500,21 @@ function generateSetlistHTML()
                   " draggable='true' ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )''>" +
                   s.songs[ j ].name + "</button>\n";
     }
+    if( firstTimeSL )
+      tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
+                  "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
+                  "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> Drop Songs Here </button>\n";
+    else
+      tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
+                  "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
+                  "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>&nbsp+&nbsp</button>\n";
 
-    tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
-                "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
-                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> + </button>\n";
-    tempHtml += s.songs.length + "<br>\n";
+    if( s.songs.length )
+      tempHtml += "<font size='1'>" + s.songs.length + "</font>";
+    tempHtml += "<br>\n";
   }
+
+  firstTimeSL = false;
 
   tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n";
   tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n"; // Trash can for deleting stuff.
