@@ -171,7 +171,7 @@
 <button class='css_modeButton' id='Help'                onclick='toggleHelp();'>Help</button>
 <hr>
 <div id='setlist'> </div>
-<div id='help'></div>
+<div id='multiuse'></div>
 </div>
 
 <div id='library_pane' class='css_library_pane'>
@@ -204,8 +204,9 @@ const MODE_CLIPBOARD  = 3;
 
 // Library modes.
 const MODE_EDIT       = 10;
-const MODE_DEL_LIB    = 11;
-const MODE_ADD_LIB    = 12;
+//const MODE_INFO       = 11;
+const MODE_DEL_LIB    = 12;
+const MODE_ADD_LIB    = 13;
 
 const VIEW_MODE_SONG_NAME = 0;
 const VIEW_MODE_ARTIST_NAME = 1;
@@ -216,7 +217,7 @@ var operationMode = MODE_NONE;
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name="", artist="", lyrics="", key="" )
+  constructor( name="", artist="", key="", lyrics="" )
   {
     this.name = name;
     this.artist = artist;
@@ -318,6 +319,8 @@ function dropElem( ev )
       curSetList.sets[ toSet ].songs.splice( toSongIx, 0, curSetList.sets[ fromSet ].songs[ fromSongIx ] );
       curSetList.sets[ fromSet ].songs.splice( fromSongIx, 1 );
     }
+
+    slEditedFlag = true;
   }
   else if( ( dragElem.substring( 0, 8 ) == "libSong." ) &&
            ( ev.target.id.substring( 0, 12 ) == "setListSong." ) ) // Dropping library song into set list.
@@ -348,6 +351,8 @@ function dropElem( ev )
       curSetList.sets.splice( toSet + 1, 0, curSetList.sets[ fromSet ] );
       curSetList.sets.splice( fromSet, 1 );
     }
+
+    slEditedFlag = true;
   }
   else if( ev.target.id == "trashCan" )
   {
@@ -364,6 +369,8 @@ function dropElem( ev )
       var delSet = parseInt( dragElem.substring( 11, ) );
       curSetList.sets.splice( delSet, 1 );
     }
+
+    slEditedFlag = true;
   }
 
   generateSetlistHTML();
@@ -402,17 +409,19 @@ function setClick( setIndex, songIndex )
 function libSongClick( songId )
 {
   if( operationMode == MODE_EDIT )
+  {
+    saveSongEdits();
     editSong = songLibrary[ songId ];
+  }
   else if( operationMode == MODE_DEL_LIB )
   {
     libEditedFlag = true;
     delete( songLibrary[ songId ] );
   }
   else if( operationMode == MODE_CLIPBOARD )
-  {
     curSetList.sets[ curSetList.sets.length - 1 ].songs.push( songLibrary[ songId ] );
-    generateSetlistHTML();
-  }
+
+  generateSetlistHTML();
   generateLibraryHTML();
 }
 
@@ -439,7 +448,7 @@ function setRename( setIndex )
     var elem = document.getElementById( "setListSet." + setIndex );
     elem.innerHTML = name;
   }
-
+  slEditedFlag = false;
   generateSetlistHTML();
 }
 
@@ -508,29 +517,47 @@ function generateSetlistHTML()
     document.getElementById( 'saveSetButton' ).classList.remove( 'css_highlight' );
 }
 
+function saveSongEdits()
+{
+  if( editSong )
+  {
+    delete( songLibrary[ editSong.id ] );
+
+    var name = document.getElementById( "editSongName" ).value; // strip HTML tags in the name and artist
+    name = name.replace(/(<([^>]+)>)/gi, "");
+    if( name == pruneQuote( editSong.name ) )
+      name = editSong.name; // name didn't really change. don't lose the apostrophes.
+    var artist = document.getElementById( "editSongArtist" ).value;
+    artist = artist.replace(/(<([^>]+)>)/gi, "" );
+    if( artist == pruneQuote( editSong.artist ) )
+      artist = editSong.artist; // name didn't really change. don't lose the apostrophes.
+    if( artist == "Artist" ) // We put this value in the field if it's empty
+      artist = "";           // but we don't actually want to use it.
+    var key = document.getElementById( "editSongKey" ).value;
+    key = key.replace(/(<([^>]+)>)/gi, "");
+    if( key == "Key" )
+      key = "";
+
+    // Allow html in the lyrics.
+    var editedSong = new LibrarySong( name, artist, key, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
+    if( editedSong.id != "." ) // That's the default name when adding, don't add.
+    {
+      // Check for a change before setting libEditedFlag.
+      songLibrary[ editedSong.id ] = editedSong;
+      libEditedFlag = true;
+    }
+  }
+}
+
 ///////////////////////// ///////////////////////// /////////////////////////
 ///////////////////////// ///////////////////////// /////////////////////////
 function changeMode( mode )
 {
   // We were editing a library file. Save the changes.
-  if( ( operationMode == MODE_EDIT ) && editSong )
+  if( operationMode == MODE_EDIT && editSong )
   {
-    var name = document.getElementById( "editSongName" ).innerHTML; // strip HTML tags in the name and artist
-    name = name.replace(/(<([^>]+)>)/gi, "");
-    var artist = document.getElementById( "editSongArtist" ).innerHTML;
-    artist = artist.replace(/(<([^>]+)>)/gi, "");
-    var key = document.getElementById( "editSongKey" ).innerHTML;
-    key = key.replace(/(<([^>]+)>)/gi, "");
-    // Allow html in the lyrics.
-    var editedSong = new LibrarySong( name, artist, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
-
-    delete( songLibrary[ editSong.id ] );
-    if( editedSong.id != "." ) // That's the default name when adding, don't add.
-    {
-      // tbd, check for a change before setting libEditedFlag.
-      songLibrary[ editedSong.id ] = editedSong;
-      libEditedFlag = true;
-    }
+    saveSongEdits();
+    document.getElementById( 'multiuse' ).innerHTML = "";
   }
 
   editSong = undefined;
@@ -539,7 +566,7 @@ function changeMode( mode )
   // Adding a song to the library. Create an empty one and change to MODE_EDIT
   if( operationMode == MODE_ADD_LIB )
   {
-    editSong = new LibrarySong( );
+    editSong = new LibrarySong();
     operationMode = MODE_EDIT;
   }
 
@@ -661,6 +688,17 @@ function saveLibrary()
   generateLibraryHTML();
 }
 
+function pruneQuote( convString )
+{
+  var newString = "";
+
+  for( var i = 0;i < convString.length;i++ )
+    if( convString[ i ] != "'" )
+      newString += convString[ i ];
+
+  return newString;
+}
+
 /////////////// /////////////// /////////////// ///////////////
 // generate the library pane.
 // 1) list of songs from the library that can be dragged into the set list 
@@ -669,63 +707,75 @@ function saveLibrary()
 /////////////// /////////////// /////////////// ///////////////
 function generateLibraryHTML()
 {
-  if( ( operationMode == MODE_EDIT ) && editSong )
+  if( operationMode == MODE_EDIT && editSong )
   {
-    tmpHtml = "Song Name";
-    tmpHtml += "<div contenteditable='true' id='editSongName' class='css_editSong'>" + editSong.name + "</div>";
-    tmpHtml += "Artist";
-    tmpHtml += "<div contenteditable='true' id='editSongArtist' class='css_editSong'>" + editSong.artist + "</div>";
-    tmpHtml += "Key";
-    tmpHtml += "<div contenteditable='true' id='editSongKey' class='css_editSong'>" + editSong.key + "</div>";
-
-    tmpHtml += "Lyrics";
-    var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
-    tmpHtml += "<div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
-  }
-  else // Show the library
-  {
-    var t = []; // Array for sorting.
-    for( const[ key, value ] of Object.entries( songLibrary ) )
-      t.push( value );
-
-        switch( libViewMode )
-        {
-          case VIEW_MODE_SONG_NAME: t.sort( function( a, b ){ return ( a.name > b.name ) ? 1 : -1 } );; break;
-          case VIEW_MODE_ARTIST_NAME: t.sort( function( a, b ){ return ( a.artist > b.artist ) ? 1 : -1 } ); break;
-          case VIEW_MODE_KEY: t.sort( function( a, b ){ return ( a.key > b.key ) ? 1 : -1 } ); break;
-        }
-
-    var ll = "";
-    var tmpHtml = "";
-    var firstTime = true;
-
-    if( !t.length )
-      tmpHtml += "<h2>Please open a song library.</h2>";
+    var tmpHtml = "<br>";
+    var songName = pruneQuote( editSong.name );
+    var artist = editSong.artist;
+    if( !artist )
+      artist = "Artist";
     else
-      for( var i = 0;i < t.length;i++ )
-      {
-        var cl;
-        switch( libViewMode )
-        {
-          case VIEW_MODE_SONG_NAME: cl = t[ i ].id[ 0 ]; break;
-          case VIEW_MODE_ARTIST_NAME: cl = t[ i ].artist; break;
-          case VIEW_MODE_KEY: cl = t[ i ].key; break;
-        }
+      artist = pruneQuote( artist ); // for strings with apostophes
 
-        if( cl != ll )
-        {
-          ll = cl;
-          if( !firstTime )
-            tmpHtml += "<br><br>" + cl + " ";
-          else
-            tmpHtml += cl + " ";
+    var key = editSong.key;
+    if( !key )
+      key = "Key";
+    else
+      key = pruneQuote( key );
 
-          firstTime = false;
-        }
-        tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
-                   "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
-      }
+    tmpHtml += "<input contenteditable='true' id='editSongName' value='" + songName + "'>\
+                <input contenteditable='true' id='editSongArtist' value='" + artist + "'>\
+                <input contenteditable='true' id='editSongKey' value='" + key + "'>"; 
+
+    var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
+    tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
+
+    var elem = document.getElementById( 'multiuse' ); // edit in the multiuse panel on the left
+    elem.innerHTML = tmpHtml;
   }
+
+  // Show the library
+  var tmpHtml = "";
+  var lastValue = undefined;
+  var firstTime = true;
+  var t = []; // Array for sorting.
+
+  for( const[ key, value ] of Object.entries( songLibrary ) )
+    t.push( value );
+
+  switch( libViewMode )
+  {
+    case VIEW_MODE_SONG_NAME:   t.sort( function( a, b ){ return ( a.name > b.name )      ? 1 : -1 } ); break;
+    case VIEW_MODE_ARTIST_NAME: t.sort( function( a, b ){ return ( a.artist > b.artist )  ? 1 : -1 } ); break;
+    case VIEW_MODE_KEY:         t.sort( function( a, b ){ return ( a.key > b.key )        ? 1 : -1 } ); break;
+  }
+
+  if( !t.length )
+    tmpHtml += "<h2>Please open a song library.</h2>";
+  else
+    for( var i = 0;i < t.length;i++ )
+    {
+      var currentVal; 
+      switch( libViewMode )
+      {
+        case VIEW_MODE_SONG_NAME:   currentVal = t[ i ].id[ 0 ]; break;
+        case VIEW_MODE_ARTIST_NAME: currentVal = t[ i ].artist; break;
+        case VIEW_MODE_KEY:         currentVal = t[ i ].key; break;
+      }
+
+      if( currentVal != lastValue )
+      {
+        lastValue = currentVal;
+        if( !firstTime )
+          tmpHtml += "<br><br>";
+        tmpHtml += currentVal + " ";
+
+        firstTime = false;
+      }
+      tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
+                  "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
+    }
+
   document.getElementById( 'libraryDiv' ).innerHTML = tmpHtml;
 
   if( libEditedFlag )
@@ -1268,7 +1318,7 @@ function toggleHelp()
   if( helpState )
     helpHtml = htmlConstStrings( 2 );
 
-  var helpElem = document.getElementById( 'help' );
+  var helpElem = document.getElementById( 'multiuse' );
   helpElem.innerHTML = helpHtml;
 }
 
