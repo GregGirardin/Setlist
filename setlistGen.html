@@ -469,7 +469,7 @@ function setAdd()
 var firstTimeSL = true;
 function generateSetlistHTML()
 {
-  var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name + "</div>";
+  var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name + "</div><br>";
 
   for( var i = 0;i < curSetList.sets.length;i++ )
   {
@@ -762,7 +762,7 @@ function generateLibraryHTML()
   }
 
   if( !t.length )
-    tmpHtml += "<h2>Please open a song library.</h2>";
+    tmpHtml += "<h2>Please open a song lyric library.</h2>";
   else
     for( var i = 0;i < t.length;i++ )
     {

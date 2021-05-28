@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # Scan local directory for txt lyric files and put them into lyricLibrary.json
 # The first line is assumed to be the song name, the 2nd to be a space, and 
-# the rest is assumed to be lyrics. We don't expect artist information to be present
-
+# the rest is assumed to be lyrics.
 # Duplicate song names are not allowed.
 
 import os, glob, json
