@@ -225,7 +225,7 @@ class LibrarySong
     this.id = this.id.replace( / /g, "_" );  // replace with _
     this.id = this.id.replace( /'/g, "_" ); 
     this.lyrics = lyrics;
-    this.key = key
+    this.key = key;
   }
 }
 
@@ -398,7 +398,6 @@ function setClick( setIndex, songIndex )
     cs.css_highlight = !cs.css_highlight;
   else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
-
   generateSetlistHTML(); 
 }
 
@@ -419,8 +418,10 @@ function libSongClick( songId )
     delete( songLibrary[ songId ] );
   }
   else if( operationMode == MODE_CLIPBOARD )
-    curSetList.sets[ curSetList.sets.length - 1 ].songs.push( songLibrary[ songId ] );
-
+  {
+    song = new SetListSong( songLibrary[ songId ].name, songLibrary[ songId ].artist );
+    curSetList.sets[ curSetList.sets.length - 1 ].songs.push( song );
+  }
   generateSetlistHTML();
   generateLibraryHTML();
 }
@@ -516,7 +517,8 @@ function generateSetlistHTML()
   firstTimeSL = false;
 
   tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n";
-  tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n"; // Trash can for deleting stuff.
+  // tbd. Make Trash an icon
+  tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n";
 
   document.getElementById( 'setlist' ).innerHTML = tempHtml;
 
@@ -1127,7 +1129,7 @@ displaySet( DISPLAY_LARGE );
     <br>
     The Clipboard is a hidden set that is not displayed in the rendered set list file. It is provided
     to make the set list a bit easier to manage. Songs can be dragged to and from the Clipboard as with
-    any other set. In Clipboard Mode songs are added to the Clipboard from the Library as you click on them.<br>
+    any other set. In 'Add To Clipboard' Mode songs are added to the Clipboard from the Library as you click on them.<br>
     <br>
     Songs that are part of a medley can be indicated with 'Medley' mode.<br>
     Songs can be highlighted in red with 'Highlight' mode.<br>
