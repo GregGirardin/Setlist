@@ -189,7 +189,7 @@
 </section>
 
 <script>
-const lyricLibLoc = 'http://https://greggirardin.github.io/lyricLibrary.json';
+const lyricLibLoc = 'https://greggirardin.github.io/lyricLibrary.json';
 var slEditedFlag = false;
 var libEditedFlag = false;
 var scratchPad = [];
@@ -1299,6 +1299,11 @@ function saveSetlist()
           }
           setFile += nLine + "<br>\n";
         }
+      }
+      if( curFixedFontState == true ) // happens if song ends with fixed font
+      {
+        setFile += "</font>\n";
+        ffState = false;
       }
       setFile += "</div>\n\n";
     }
