@@ -189,7 +189,7 @@
 </section>
 
 <script>
-const lyricLibLoc = 'http://gbi.vinoski.net/lyricLibrary.json';
+const lyricLibLoc = 'http://https://greggirardin.github.io/lyricLibrary.json';
 var slEditedFlag = false;
 var libEditedFlag = false;
 var scratchPad = [];
@@ -549,8 +549,8 @@ function saveSongEdits()
     if( key == "Key" )
       key = "";
 
-    // Allow html in the lyrics.
-    var editedSong = new LibrarySong( name, artist, key, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/, '\n' ) );
+    // Allow html in the lyrics. But replace <br> with CR.
+    var editedSong = new LibrarySong( name, artist, key, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/g, '\n' ) );
     if( editedSong.id != "." ) // That's the default name when adding, don't add.
     {
       // Check for a change before setting libEditedFlag.
