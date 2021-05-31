@@ -196,21 +196,20 @@
 </section>
 
 <script>
-const lyricLibLoc = 'https://greggirardin.github.io/lyricLibrary.json';
+var lyricLibLoc = 'https://greggirardin.github.io/lyricLibrary.json'; // Can specify in URL. http://setlist.loc.com/?library='http://your.lib.loc/file.json'
 var slEditedFlag = false;
 var libEditedFlag = false;
-var scratchPad = [];
 var songLibrary = {}; // object of LibrarySong
 var curSetList; // a SetList
 var editSong; // LibrarySong we're editing if MODE_EDIT
 
 // Constants.
+const MAX_SETS = 10;
+
 const MODE_NONE       = 0;
 const MODE_MEDLEY     = 1;
 const MODE_HIGHLIGHT  = 2;
 const MODE_CLIPBOARD  = 3;
-
-// Library modes.
 const MODE_EDIT       = 10;
 const MODE_DEL_LIB    = 11;
 const MODE_ADD_LIB    = 12;
@@ -279,10 +278,16 @@ window.onload = setListInit;
 /////////////// /////////////// /////////////// ///////////////
 function setListInit()
 {
+  const urlParams = new URLSearchParams( window.location.search );
+  var library = urlParams.get( 'library' );
+  if( library )
+    lyricLibLoc = library;
+
   newSetlist();
   getDefaultLibrary();
   document.getElementById( 'openSetAction' ).addEventListener( 'change', openSetFile, false );
   document.getElementById( 'addLibraryAction' ).addEventListener( 'change', addLibraryAction, false );
+
 }
 
 function sl_allowDrop( ev ) { ev.preventDefault(); }
@@ -294,18 +299,21 @@ function dragElem( ev ) { ev.dataTransfer.setData( "dragElem", ev.target.id ); }
 /////////////// /////////////// /////////////// ///////////////
 function dropElem( ev )
 {
+  const slsong = "setListSong.";
+  const slset = "setListSet.";
+
   ev.preventDefault();
   var dragElem = ev.dataTransfer.getData( "dragElem" );
 
   if( ( dragElem.substring( 0, 9 ) == "clipboard" ) &&
-      ( ev.target.id.substring( 0, 12 ) == "setListSong." ) ) // dropping the clipboard onto a set.
+      ( ev.target.id.substring( 0, 12 ) == slsong ) ) // dropping the clipboard onto a set.
   {
     indexes = ev.target.id.substring( 12, ).split( "." );
     var toSet = parseInt( indexes[ 0 ] );
     var toSongIx = parseInt( indexes[ 1 ] );
+
     if( toSet < curSetList.sets.length - 1 )
     {
-      // console.log( toSet, curSetList.sets.length );
       while( true )
       {
         var song = curSetList.sets[ curSetList.sets.length - 1 ].songs.pop();
@@ -316,8 +324,8 @@ function dropElem( ev )
       }
     }
   }
-  else if( ( dragElem.substring( 0, 12 ) == "setListSong." ) &&
-           ( ev.target.id.substring( 0, 12 ) == "setListSong." ) ) // Moving a set list song
+  else if( ( dragElem.substring( 0, 12 ) == slsong ) &&
+           ( ev.target.id.substring( 0, 12 ) == slsong ) ) // Moving a set list song
   {
     var indexes = dragElem.substring( 12, ).split( "." );
     var fromSet = parseInt( indexes[ 0 ] );
@@ -349,11 +357,12 @@ function dropElem( ev )
     slEditedFlag = true;
   }
   else if( ( dragElem.substring( 0, 8 ) == "libSong." ) &&
-           ( ev.target.id.substring( 0, 12 ) == "setListSong." ) ) // Dropping library song into set list.
+           ( ev.target.id.substring( 0, 12 ) == slsong ) ) // Dropping library song into set list.
   {
     var songId = dragElem.substring( 8, );
     var libSong = songLibrary[ songId ];
     var newSong = new SetListSong( libSong.name, libSong.artist );
+
     var indexes = ev.target.id.substring( 12, ).split( "." );
     var toSet = parseInt( indexes[ 0 ] );
     var toSongIx = parseInt( indexes[ 1 ] );
@@ -361,8 +370,8 @@ function dropElem( ev )
     curSetList.sets[ toSet ].songs.splice( toSongIx, 0, newSong );
     slEditedFlag = true;
   }
-  else if( ( dragElem.substring( 0, 11 ) == "setListSet." ) &&
-           ( ev.target.id.substring( 0, 11 ) == "setListSet." ) ) // Moving a set
+  else if( ( dragElem.substring( 0, 11 ) == slset ) &&
+           ( ev.target.id.substring( 0, 11 ) == slset ) ) // Moving a set
   {
     var fromSet = parseInt( dragElem.substring( 11, ) );
     var toSet = parseInt( ev.target.id.substring( 11, ) );
@@ -382,7 +391,7 @@ function dropElem( ev )
   }
   else if( ev.target.id == "trashCan" )
   {
-    if( dragElem.substring( 0, 12 ) == "setListSong." )
+    if( dragElem.substring( 0, 12 ) == slsong )
     {
       var indexes = dragElem.substring( 12, ).split( "." );
       var delSet = parseInt( indexes[ 0 ] );
@@ -390,7 +399,7 @@ function dropElem( ev )
 
       curSetList.sets[ delSet ].songs.splice( delSong, 1 );
     }
-    else if( dragElem.substring( 0, 11 ) == "setListSet." )
+    else if( dragElem.substring( 0, 11 ) == slset )
     {
       var delSet = parseInt( dragElem.substring( 11, ) );
       curSetList.sets.splice( delSet, 1 );
@@ -426,8 +435,7 @@ function setClick( setIndex, songIndex )
     cs.css_highlight = !cs.css_highlight;
   else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
-  else if( ( operationMode == MODE_CLIPBOARD ) &&
-           ( setIndex < curSetList.sets.length - 1 ) )
+  else if( ( operationMode == MODE_CLIPBOARD ) && ( setIndex < curSetList.sets.length - 1 ) )
   {
     var song = curSetList.sets[ setIndex ].songs[ songIndex ];
     curSetList.sets[ curSetList.sets.length - 1 ].songs.push( song );
@@ -479,12 +487,14 @@ function newSetlist()
 function setRename( setIndex )
 {
   var name = prompt( "Enter Set Name:", curSetList.sets[ setIndex ].name );
+
   if( name )
   {
     curSetList.sets[ setIndex ].name = name;
     var elem = document.getElementById( "setListSet." + setIndex );
     elem.innerHTML = name;
   }
+
   slEditedFlag = false;
   generateSetlistHTML();
 }
@@ -492,7 +502,7 @@ function setRename( setIndex )
 /////////////// /////////////// /////////////// ///////////////
 function setAdd()
 {
-  if( curSetList.sets.length < 10 )
+  if( curSetList.sets.length < MAX_SETS )
   {
     curSetList.sets.splice( curSetList.sets.length - 1, 0, new Set() );
     slEditedFlag = true;
@@ -1178,6 +1188,7 @@ displaySet( DISPLAY_LARGE );
     A custom lyric library can be created with 'New' in the Library pane.
     Add songs to the library with '+', or edit existing songs with 'Edit'. Then the new library
     can be saved and opened later. When a library is opened it is merged with the existing library.
+    A library can be specified by appending "?library=http://x.y.z/???.json" to this URL.
     Delete songs from the library with 'Delete'. <br>
     
 */}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" ); // little hack because certain tags confuse the browser.
