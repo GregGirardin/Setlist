@@ -155,6 +155,13 @@
   font-family: "Lucida Console", "Courier New", monospace;
 }
 
+#trashCan
+{
+  display: block;
+  height: 40px;  
+  width: 30px;
+}
+
 </style>
 </head>
 <body align="left">
@@ -533,12 +540,12 @@ function generateSetlistHTML()
                   " draggable='true' ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )''>" +
                   s.songs[ j ].name + "</button>\n";
     }
-    if( firstTimeSL )
+    if( firstTimeSL ) // a + for moving songs to the end of a set
       tempHtml += "<button id='setListSong." + i + "." + j +
                   "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
                   "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> Drop Songs Here </button>\n";
     else
-      tempHtml += "<button id='setListSong." + i + "." + j + // a + for moving songs to the end of a set
+      tempHtml += "<button id='setListSong." + i + "." + j +
                   "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
                   "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>&nbsp+&nbsp</button>\n";
 
@@ -549,9 +556,8 @@ function generateSetlistHTML()
 
   firstTimeSL = false;
 
-  tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n";
-  // tbd. Make Trash an icon
-  tempHtml += "<button id='trashCan' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )'> Trash </button>\n";
+  tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n<br>\n<br>";
+  tempHtml += "<input id='trashCan' type='image' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )' src='https://greggirardin.github.io/trashcan.png'/>\n";
 
   document.getElementById( 'setlist' ).innerHTML = tempHtml;
 
