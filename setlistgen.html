@@ -171,6 +171,7 @@
 <button class='css_menuButton' id='newSetButton'        onclick='newSetlist();'>New</button>
 <button class='css_menuButton' id='openSetButton'       onclick='openSetlist();'>Open</button>
 <button class='css_menuButton' id='saveSetButton'       onclick='saveSetlist();'>Save</button>
+<button class='css_menuButton' id='viewByButton'        onclick='toggleViewBy();'>View By</button>
 
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
@@ -287,7 +288,6 @@ function setListInit()
   getDefaultLibrary();
   document.getElementById( 'openSetAction' ).addEventListener( 'change', openSetFile, false );
   document.getElementById( 'addLibraryAction' ).addEventListener( 'change', addLibraryAction, false );
-
 }
 
 function sl_allowDrop( ev ) { ev.preventDefault(); }
@@ -513,7 +513,6 @@ function setAdd()
 }
 
 /////////////// /////////////// /////////////// ///////////////
-var firstTimeSL = true;
 function generateSetlistHTML()
 {
   var tempHtml = "<div id='setListName' onClick='setSetlistName()'>" + curSetList.name + "</div><br>";
@@ -522,11 +521,8 @@ function generateSetlistHTML()
   {
     var s = curSetList.sets[ i ];
     if( i == curSetList.sets.length - 1 )
-    {
-      //tempHtml += "<br><button class='css_Clipboard'> Clipboard </button>\n";
       tempHtml += "<button id='clipboard' class='css_Clipboard' draggable='true' " +
                   "ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> Clipboard </button>\n";
-    }
     else
       tempHtml += "<button id='setListSet." + i + "' class='css_setClass' onclick='setRename( " + i + " )' draggable='true' " +
                   "ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>" + s.name + "</button>\n";
@@ -546,25 +542,27 @@ function generateSetlistHTML()
         classes += ' css_medleyEnd';
       medleyState = s.songs[ j ].medley;
 
+      var displayName;
+      switch( slViewMode )
+      {
+        case VIEW_MODE_SONG_NAME:   displayName = s.songs[ j ].name; break;
+        case VIEW_MODE_ARTIST_NAME: displayName = songLibrary[ s.songs[ j ].id ].artist; break;
+        case VIEW_MODE_KEY:         displayName = songLibrary[ s.songs[ j ].id ].key; break;
+      }
+
       tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='setClick( " + i + ", " + j + " )'" +
                   " draggable='true' ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )''>" +
-                  s.songs[ j ].name + "</button>\n";
+                  displayName + "</button>\n";
     }
-    if( firstTimeSL ) // a + for moving songs to the end of a set
-      tempHtml += "<button id='setListSong." + i + "." + j +
-                  "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
-                  "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'> Drop Songs Here </button>\n";
-    else
-      tempHtml += "<button id='setListSong." + i + "." + j +
-                  "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
-                  "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>&nbsp+&nbsp</button>\n";
+
+    var tmpStr = ( curSetList.sets[ i ].songs.length == 0 ) ? 'Drop Songs Here' : '&nbsp+&nbsp';
+    tempHtml += "<button id='setListSong." + i + "." + j + "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
+                "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>" + tmpStr + "</button>\n";
 
     if( s.songs.length )
       tempHtml += "<font size='1'>" + s.songs.length + "</font>";
     tempHtml += "<br>\n";
   }
-
-  firstTimeSL = false;
 
   tempHtml += "<br><button onclick='setAdd()'> Add Set </button>\n<br>\n<br>";
   tempHtml += "<input id='trashCan' type='image' ondragover='sl_allowDrop( event )' ondrop='dropElem( event )' src='https://greggirardin.github.io/trashcan.png'/>\n";
@@ -655,6 +653,26 @@ function changeMode( mode )
   generateLibraryHTML();
 }
 
+var slViewMode = VIEW_MODE_SONG_NAME;
+function toggleViewBy()
+{
+  slViewMode++;
+  if( slViewMode > VIEW_MODE_KEY )
+    slViewMode = VIEW_MODE_SONG_NAME;
+
+  var viewMode;
+  switch( slViewMode )
+  {
+    case VIEW_MODE_SONG_NAME: viewMode = "Name"; break;
+    case VIEW_MODE_ARTIST_NAME: viewMode = "Artist"; break;
+    case VIEW_MODE_KEY: viewMode = "Key"; break;
+  }
+
+  var elem = document.getElementById( "viewByButton" );
+  elem.innerHTML = viewMode;
+  generateSetlistHTML();
+}
+
 var libViewMode = VIEW_MODE_SONG_NAME;
 function toggleLibViewMode()
 {
@@ -665,7 +683,7 @@ function toggleLibViewMode()
   var viewMode;
   switch( libViewMode )
   {
-    case VIEW_MODE_SONG_NAME: viewMode = "Song Name"; break;
+    case VIEW_MODE_SONG_NAME: viewMode = "Name"; break;
     case VIEW_MODE_ARTIST_NAME: viewMode = "Artist"; break;
     case VIEW_MODE_KEY: viewMode = "Key"; break;
   }
