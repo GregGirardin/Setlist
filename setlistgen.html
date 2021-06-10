@@ -190,7 +190,8 @@
 <button class='css_menuButton' id='addLibSongButton'  onclick='changeMode( MODE_ADD_LIB );'>+</button>
 <button class='css_modeButton' id='modeEditButton'    onclick='changeMode( MODE_EDIT );'>Edit</button>
 <button class='css_modeButton' id='modeDelLibButton'  onclick='changeMode( MODE_DEL_LIB );'>Delete</button>
-<button class='css_modeButton' id='toggleLibViewMode' onclick='toggleLibViewMode( );'>Sort by</button>
+<button class='css_modeButton' id='toggleLibViewMode' onclick='toggleLibViewMode();'>Sort by</button>
+<button class='css_modeButton' id='togLyricHTML'      onclick='togLyricHTML();'>HTML?</button>
 <hr>
 <div id='libraryDiv' class='css_library'> </div>
 </div>
@@ -575,6 +576,13 @@ function generateSetlistHTML()
     document.getElementById( 'saveSetButton' ).classList.remove( 'css_highlight' );
 }
 
+function strip( html )
+{
+  var tempDiv = document.createElement( "DIV" );
+  tempDiv.innerHTML = html;
+  return tempDiv.innerText;
+}
+
 function saveSongEdits()
 {
   if( editSong )
@@ -597,7 +605,16 @@ function saveSongEdits()
       key = "";
 
     // Allow html in the lyrics. But replace <br> with CR.
-    var editedSong = new LibrarySong( name, artist, key, document.getElementById( "editSongLyrics" ).innerHTML.replace( /<br>/g, '\n' ) );
+    var foo = document.getElementById( "editSongLyrics" ).innerHTML;
+    if( !allowLyricHTML )
+    { // Prune formatting. Try to preserve newlines.
+      foo = foo.replace( /<br>/g, '<br>Q!W@E#' ); // a randomish sequence we can go back and replace with a \n after we clear all html formatting
+      foo = foo.replace( /<\/div>/g, '</div>Q!W@E#' );
+      foo = foo.replace( /<\/p>/g, '</p>Q!W@E#' );
+      foo = strip( foo ); // Strip HTML formating
+      foo = foo.replace( /Q!W@E#/g, '\n' ); // add newlines back
+    }
+    var editedSong = new LibrarySong( name, artist, key, foo );
     if( editedSong.id != "." ) // That's the default name when adding, don't add.
     {
       // Check for a change before setting libEditedFlag.
@@ -692,6 +709,20 @@ function toggleLibViewMode()
   elem.innerHTML = viewMode;
 
   generateLibraryHTML();
+}
+
+var allowLyricHTML = false;
+
+// Allow or prune HTML in edited lyrics. When pasting you end up with whatever HTML formatting
+// that gets included. Usually it's just a harmless waste of space but it could affect the display.
+// Pruning it also makes lyricLibrary.json cleaner.
+// You may want to keep it if you're adding italics, bold, etc to the lyrics.
+function togLyricHTML()
+{
+  allowLyricHTML = !allowLyricHTML;
+  
+  var elem = document.getElementById( "togLyricHTML" );
+  elem.innerHTML = allowLyricHTML ? "Allow" : "Prune";
 }
 
 //////////////// ////////////////
@@ -1186,29 +1217,30 @@ displaySet( DISPLAY_LARGE );
 
   case 2:
     return( function(){/* 
-    <h2> Set List Creator </h2>
-    Create a new set list with 'New'. Click on the set list name to rename it.<br>
-    Add additional sets with 'Add Set'. Click on the set names to rename them.<br>
-    <br>
-    Drag songs from the Library in the right pane to the desired location in the set. The songs (and sets) can be rearranged
-    by dragging them. Delete songs or sets by dragging them to the Trash.<br>
-    Save the set with 'Save'. Edit a saved set with 'Open'.<br>
-    <br>
-    The Clipboard is a hidden set that is not displayed in the rendered set list file. It is provided
-    to make the set list a bit easier to manage. Songs can be dragged to and from the Clipboard as with
-    any other set. The Clipboard can also be dragged into the set to drop its contents.
-    In 'Add To Clipboard' mode songs are added to the Clipboard from the Library and cut from the set list
-    when you click them. <br>
-    <br>
-    Songs that are part of a medley can be indicated with 'Medley' mode.<br>
-    Songs can be highlighted in red with 'Highlight' mode.<br>
-    <br>
-    A custom lyric library can be created with 'New' in the Library pane.
-    Add songs to the library with '+', or edit existing songs with 'Edit'. Then the new library
-    can be saved and opened later. When a library is opened it is merged with the existing library.
-    A library can be specified by appending "?library=http://x.y.z/???.json" to this URL.
-    Delete songs from the library with 'Delete'. <br>
-    
+<h2> Set List Creator </h2>
+Create a new set list with 'New'. Click on the set list name to rename it.<br>
+Add additional sets with 'Add Set'. Click on the set names to rename them.<br>
+<br>
+Drag songs from the Library in the right pane to the desired location in the set. The songs (and sets) can be rearranged
+by dragging them. Delete songs or sets by dragging them to the Trash.<br>
+Save the set with 'Save'. Edit a saved set with 'Open'.<br>
+<br>
+The Clipboard is a hidden set that is not displayed in the rendered set list file. It is provided
+to make the set list a bit easier to manage. Songs can be dragged to and from the Clipboard as with
+any other set. The Clipboard can also be dragged into the set to drop its contents.
+In 'Add To Clipboard' mode songs are added to the Clipboard from the Library and cut from the set list
+when you click them. <br>
+<br>
+Songs that are part of a medley can be indicated with 'Medley' mode.<br>
+Songs can be highlighted in red with 'Highlight' mode.<br>
+<br>
+A custom lyric library can be created with 'New' in the Library pane.
+Add songs to the library with '+'. Edit existing songs with 'Edit'. To allow
+HTML in the lyrics change 'HTML' to 'Allow', else 'Prune'.
+When a library is opened it is merged with the existing library.
+A library can be specified by appending "?library=http://x.y.z/???.json" to this URL.
+Delete songs from the library with 'Delete'. <br>
+
 */}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" ); // little hack because certain tags confuse the browser.
   break;
   }
