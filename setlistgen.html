@@ -1151,8 +1151,10 @@ function expandSongNameByIndex( i )
 
 var currentSong = 0;
 
-function accordionClick( elem )
+function accordionClick( elem, keepOpen=false )
 {
+  currentSong = elem.accIndex;
+
   var wasOpen = elem.classList.contains( "active" );
 
   if( wasOpen && ( elem.classList.contains( "css_medleyCont" ) || elem.classList.contains( "css_medleyEnd" ) ) )
@@ -1161,16 +1163,14 @@ function accordionClick( elem )
     return;
   }
 
-  currentSong = elem.accIndex;
-
   closeAll();
   displaySet( displayFormat ); 
 
-  if( !wasOpen )
+  if( !wasOpen || keepOpen )
   {
     scrollToElem = elem;
 
-    // Go to head of medley and open the whole thing.
+    // Go to head of medley so we can open the whole thing.
     while( elem.classList.contains( "css_medleyCont" ) || elem.classList.contains( "css_medleyEnd" ) )
       elem = acc[ elem.accIndex - 1 ];
 
@@ -1206,13 +1206,13 @@ function accordionClick( elem )
 
 function changeSong( delta )
 {
-  currentSong += delta;
-  if( currentSong < 0 )
-    currentSong = 0;
-  else if( currentSong >= acc.length )
-    currentSong = acc.length - 1;
+  if( ( ( currentSong == 0 ) && ( delta < 0 ) ) ||
+      ( ( currentSong == acc.length ) && ( delta > 0 ) ) )
+    return;
 
-  accordionClick( acc[ currentSong ] );
+  currentSong += delta;
+
+  accordionClick( acc[ currentSong ], true );
 }
 
 var acc = document.getElementsByClassName( "accordion" );
