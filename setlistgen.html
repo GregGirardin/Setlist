@@ -853,9 +853,9 @@ function generateLibraryHTML()
     else
       key = pruneQuote( key );
 
-    tmpHtml += "<input contenteditable='true' id='editSongName' value='" + songName + "'>\
+    tmpHtml += "<input contenteditable='true' id='editSongName'   value='" + songName + "'>\
                 <input contenteditable='true' id='editSongArtist' value='" + artist + "'>\
-                <input contenteditable='true' id='editSongKey' value='" + key + "'>"; 
+                <input contenteditable='true' id='editSongKey'    value='" + key + "'>"; 
 
     var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
     tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
@@ -904,6 +904,7 @@ function generateLibraryHTML()
 
         firstTime = false;
       }
+
       if( libViewMode == VIEW_MODE_SONG_ARTIST )
       {
         var artist = "?";
@@ -1414,8 +1415,13 @@ function saveSetlist()
         if( foundSong )
         {
           if( missingFiles < 2 ) // limit alerts
-            alert( "'" + sng.artist + "' version of '" + sng.name + 
-                   "' not found. Using '" + foundSong.artist + "' version." );
+          {
+            if( sng.artist == "" )
+              alert( "Using '" + foundSong.artist + "' version of '" + sng.name + "'" );
+            else
+              alert( "'" + sng.artist + "' version of '" + sng.name + 
+                    "' not found. Using '" + foundSong.artist + "' version." );
+          }
           console.log( "'" + sng.artist + "' version not in lib, found another." );
           sng = new SetListSong( foundSong.name, foundSong.artist );
           curSetList.sets[ setIndex ].songs[ songIndex ] = sng; // update the set.
