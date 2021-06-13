@@ -1380,19 +1380,11 @@ function openSetFile( e )
 /////////////// /////////////// /////////////// /////////////// ///////////////
 function saveSetlist()
 {
-  var setFile = "<!--\n" + JSON.stringify( curSetList, null, "  " ) + "\n-->\n";
-  setFile += "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>\n";
-  setFile += "<title>" + curSetList.name + "</title>\n";
-  setFile += htmlConstStrings( 0 );
-
-  var ffState = false; // Fixed Font state
+  // Update files in the set that may have had the artist changed in the Library.
   var missingFiles = 0;
   // Songs
   for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
   {
-    setFile += "<hr><div class='setname'>" + curSetList.sets[ setIndex ].name + "</div>\n";
-
-    var inMedley = false;
     for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
     {
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
@@ -1401,10 +1393,7 @@ function saveSetlist()
         var foundSong = undefined;
         missingFiles++; 
 
-        // See if there's a song with the same name by a different artist.
-        // This happens if the artist is changed in the Library.
-
-        var found
+        var found;
         for( const[ key, value ] of Object.entries( songLibrary ) )
           if( value.name == sng.name )
           {
@@ -1424,7 +1413,7 @@ function saveSetlist()
           }
           console.log( "'" + sng.artist + "' version not in lib, found another." );
           sng = new SetListSong( foundSong.name, foundSong.artist );
-          curSetList.sets[ setIndex ].songs[ songIndex ] = sng; // update the set.
+          curSetList.sets[ setIndex ].songs[ songIndex ] = sng; // update
         }
         else
         {
@@ -1435,6 +1424,27 @@ function saveSetlist()
           continue;
         }
       }
+    }
+  }
+
+  var setFile = "<!--\n" + JSON.stringify( curSetList, null, "  " ) + "\n-->\n";
+  setFile += "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>\n";
+  setFile += "<title>" + curSetList.name + "</title>\n";
+  setFile += htmlConstStrings( 0 );
+
+  var ffState = false; // Fixed Font state
+  // Songs
+  for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
+  {
+    setFile += "<hr><div class='setname'>" + curSetList.sets[ setIndex ].name + "</div>\n";
+
+    var inMedley = false;
+    for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
+    {
+      var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
+      if( !songLibrary[ sng.id ] )
+        continue;
+
       var fLines = songLibrary[ sng.id ].lyrics.split( "\n" );
 
       var classString = "accordion";
@@ -1457,7 +1467,7 @@ function saveSetlist()
         inMedley = false;
       }
       setFile += "<button class='" + classString + "'>";
-      setFile += ( songIndex + 1 ).toString() + ". " + sng.name + "</button>\n"; // tbd, include artist if present
+      setFile += ( songIndex + 1 ).toString() + ". " + sng.name + "</button>\n";
       setFile += "<div class='panel'>\n";
 
       for( line of fLines )
