@@ -191,7 +191,7 @@
 <button class='css_modeButton' id='modeEditButton'    onclick='changeMode( MODE_EDIT );'>Edit</button>
 <button class='css_modeButton' id='modeDelLibButton'  onclick='changeMode( MODE_DEL_LIB );'>Delete</button>
 <button class='css_modeButton' id='toggleLibViewMode' onclick='toggleLibViewMode();'>Sort by</button>
-<button class='css_modeButton' id='togLyricHTML'      onclick='togLyricHTML();'>HTML?</button>
+<button class='css_modeButton' id='togLyricHTML'      onclick='togLyricHTML();'>HTML in lyrics?</button>
 <hr>
 <div id='libraryDiv' class='css_library'> </div>
 </div>
@@ -217,15 +217,16 @@ const MODE_DEL_LIB    = 11;
 const MODE_ADD_LIB    = 12;
 
 const VIEW_MODE_SONG_NAME   = 0;
-const VIEW_MODE_ARTIST_NAME = 1;
-const VIEW_MODE_KEY         = 2;
+const VIEW_MODE_SONG_ARTIST = 1;
+const VIEW_MODE_ARTIST_NAME = 2;
+const VIEW_MODE_KEY         = 3;
 
 var operationMode = MODE_NONE;
 
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name="", artist="", key="", lyrics="" )
+  constructor( name="", artist="?", key="?", lyrics="" )
   {
     this.name = name;
     this.artist = artist;
@@ -242,6 +243,7 @@ class SetListSong
   constructor( name, artist )
   {
     this.name = name; // name and artist are key to find in library
+    console.log( artist );
     this.artist = artist;
     this.id = this.name + '.' + this.artist;
     this.id = this.id.replace( / /g, "_" );
@@ -547,8 +549,23 @@ function generateSetlistHTML()
       switch( slViewMode )
       {
         case VIEW_MODE_SONG_NAME:   displayName = s.songs[ j ].name; break;
-        case VIEW_MODE_ARTIST_NAME: displayName = songLibrary[ s.songs[ j ].id ].artist; break;
-        case VIEW_MODE_KEY:         displayName = songLibrary[ s.songs[ j ].id ].key; break;
+        case VIEW_MODE_SONG_ARTIST:
+          if( s.songs[ j ].artist == "" )
+            displayName = s.songs[ j ].name + " / ?";
+          else
+            displayName = s.songs[ j ].name + " / " + s.songs[ j ].artist;
+          break;
+
+        case VIEW_MODE_ARTIST_NAME:
+          if( s.songs[ j ].artist == "" )
+            displayName = "?";
+          else
+            displayName = s.songs[ j ].artist;
+         break;
+
+        case VIEW_MODE_KEY:
+          displayName = songLibrary[ s.songs[ j ].id ].key;
+          break;
       }
 
       tempHtml += "<button id='setListSong." + i + "." + j + "' class='" + classes + "' onclick='setClick( " + i + ", " + j + " )'" +
@@ -681,6 +698,7 @@ function toggleViewBy()
   switch( slViewMode )
   {
     case VIEW_MODE_SONG_NAME:   viewMode = "Name";    break;
+    case VIEW_MODE_SONG_ARTIST: viewMode = "Name/Artist";  break;
     case VIEW_MODE_ARTIST_NAME: viewMode = "Artist";  break;
     case VIEW_MODE_KEY:         viewMode = "Key";     break;
   }
@@ -701,6 +719,7 @@ function toggleLibViewMode()
   switch( libViewMode )
   {
     case VIEW_MODE_SONG_NAME:   viewMode = "Name";    break;
+    case VIEW_MODE_SONG_ARTIST: viewMode = "Name/Artist";  break;
     case VIEW_MODE_ARTIST_NAME: viewMode = "Artist";  break;
     case VIEW_MODE_KEY:         viewMode = "Key";     break;
   }
@@ -722,7 +741,7 @@ function togLyricHTML()
   allowLyricHTML = !allowLyricHTML;
   
   var elem = document.getElementById( "togLyricHTML" );
-  elem.innerHTML = allowLyricHTML ? "Allow" : "Prune";
+  elem.innerHTML = allowLyricHTML ? "Allow HTML" : "Prune HTML";
 }
 
 //////////////// ////////////////
@@ -857,6 +876,7 @@ function generateLibraryHTML()
   switch( libViewMode )
   {
     case VIEW_MODE_SONG_NAME:   t.sort( function( a, b ){ return ( a.name > b.name )      ? 1 : -1 } ); break;
+    case VIEW_MODE_SONG_ARTIST: t.sort( function( a, b ){ return ( a.id > b.id )          ? 1 : -1 } ); break;
     case VIEW_MODE_ARTIST_NAME: t.sort( function( a, b ){ return ( a.artist > b.artist )  ? 1 : -1 } ); break;
     case VIEW_MODE_KEY:         t.sort( function( a, b ){ return ( a.key > b.key )        ? 1 : -1 } ); break;
   }
@@ -869,7 +889,8 @@ function generateLibraryHTML()
       var currentVal; 
       switch( libViewMode )
       {
-        case VIEW_MODE_SONG_NAME:   currentVal = t[ i ].id[ 0 ]; break;
+        case VIEW_MODE_SONG_NAME:
+        case VIEW_MODE_SONG_ARTIST: currentVal = t[ i ].name[ 0 ]; break;
         case VIEW_MODE_ARTIST_NAME: currentVal = t[ i ].artist; break;
         case VIEW_MODE_KEY:         currentVal = t[ i ].key; break;
       }
@@ -883,8 +904,18 @@ function generateLibraryHTML()
 
         firstTime = false;
       }
-      tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
-                  "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
+      if( libViewMode == VIEW_MODE_SONG_ARTIST )
+      {
+        var artist = "?";
+        if( t[ i ].artist != "" )
+          artist = t[ i ].artist;
+
+        tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
+                    "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + " / " + artist + "</button>\n";
+      }
+      else
+        tmpHtml += "<button id='libSong." + t[ i ].id + "' class='css_librarySong' draggable='true' ondragstart='dragElem( event )'" + 
+                    "onclick='libSongClick( \"" + t[ i ].id + "\")'>" + t[ i ].name + "</button>\n";
     }
 
   document.getElementById( 'libraryDiv' ).innerHTML = tmpHtml;
@@ -1354,7 +1385,7 @@ function saveSetlist()
   setFile += htmlConstStrings( 0 );
 
   var ffState = false; // Fixed Font state
-  var missingFiles = false;
+  var missingFiles = 0;
   // Songs
   for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
   {
@@ -1366,13 +1397,37 @@ function saveSetlist()
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
       if( !songLibrary[ sng.id ] )
       {
-        console.log( "'" + sng.id + "' not in lib." );
-        if( missingFiles == false )
+        var foundSong = undefined;
+        missingFiles++; 
+
+        // See if there's a song with the same name by a different artist.
+        // This happens if the artist is changed in the Library.
+
+        var found
+        for( const[ key, value ] of Object.entries( songLibrary ) )
+          if( value.name == sng.name )
+          {
+            foundSong = value;
+            break;
+          }
+
+        if( foundSong )
         {
-          missingFiles = true; // Only alert once
-          alert( "'" + sng.name + "' not in library." );
+          if( missingFiles < 2 ) // limit alerts
+            alert( "'" + sng.artist + "' version of '" + sng.name + 
+                   "' not found. Using '" + foundSong.artist + "' version." );
+          console.log( "'" + sng.artist + "' version not in lib, found another." );
+          sng = new SetListSong( foundSong.name, foundSong.artist );
+          curSetList.sets[ setIndex ].songs[ songIndex ] = sng; // update the set.
         }
-        continue;
+        else
+        {
+          if( missingFiles < 2 )
+            alert( "'" + sng.name + "' by " + sng.artist + " not in library." );
+  
+          console.log( "'" + sng.name + "' not in library." );
+          continue;
+        }
       }
       var fLines = songLibrary[ sng.id ].lyrics.split( "\n" );
 
