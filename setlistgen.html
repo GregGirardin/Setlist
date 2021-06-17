@@ -175,7 +175,6 @@
 
 <button class='css_modeButton' id='modeMedleyButton'    onclick='changeMode( MODE_MEDLEY );'>Medley</button>
 <button class='css_modeButton' id='modeHighlightButton' onclick='changeMode( MODE_HIGHLIGHT );'>Highlight</button>
-<button class='css_modeButton' id='clipboard'           onclick='changeMode( MODE_CLIPBOARD );'>Add To Clipboard</button>
 <button class='css_modeButton' id='Help'                onclick='toggleHelp();'>Help</button>
 <hr>
 <div id='setlist'> </div>
@@ -211,7 +210,6 @@ const MAX_SETS = 10;
 const MODE_NONE       = 0;
 const MODE_MEDLEY     = 1;
 const MODE_HIGHLIGHT  = 2;
-const MODE_CLIPBOARD  = 3;
 const MODE_EDIT       = 10;
 const MODE_DEL_LIB    = 11;
 const MODE_ADD_LIB    = 12;
@@ -304,14 +302,16 @@ function dropElem( ev )
 {
   const slsong = "setListSong.";
   const slset = "setListSet.";
+  const cbStr = "clipboard";
+  const libsong = "libSong.";
 
   ev.preventDefault();
   var dragElem = ev.dataTransfer.getData( "dragElem" );
 
-  if( ( dragElem.substring( 0, 9 ) == "clipboard" ) &&
-      ( ev.target.id.substring( 0, 12 ) == slsong ) ) // dropping the clipboard onto a set.
+  if( ( dragElem.substring( 0, cbStr.length ) == cbStr ) &&
+      ( ev.target.id.substring( 0, slsong.length ) == slsong ) ) // dropping the clipboard onto a set.
   {
-    indexes = ev.target.id.substring( 12, ).split( "." );
+    indexes = ev.target.id.substring( slsong.length, ).split( "." );
     var toSet = parseInt( indexes[ 0 ] );
     var toSongIx = parseInt( indexes[ 1 ] );
 
@@ -327,14 +327,14 @@ function dropElem( ev )
       }
     }
   }
-  else if( ( dragElem.substring( 0, 12 ) == slsong ) &&
-           ( ev.target.id.substring( 0, 12 ) == slsong ) ) // Moving a set list song
+  else if( ( dragElem.substring( 0, slsong.length ) == slsong ) &&
+           ( ev.target.id.substring( 0, slsong.length ) == slsong ) ) // Moving a set list song
   {
-    var indexes = dragElem.substring( 12, ).split( "." );
+    var indexes = dragElem.substring( slsong.length, ).split( "." );
     var fromSet = parseInt( indexes[ 0 ] );
     var fromSongIx = parseInt( indexes[ 1 ] );
 
-    indexes = ev.target.id.substring( 12, ).split( "." );
+    indexes = ev.target.id.substring( slsong.length, ).split( "." );
     var toSet = parseInt( indexes[ 0 ] );
     var toSongIx = parseInt( indexes[ 1 ] );
 
@@ -359,25 +359,25 @@ function dropElem( ev )
 
     slEditedFlag = true;
   }
-  else if( ( dragElem.substring( 0, 8 ) == "libSong." ) &&
-           ( ev.target.id.substring( 0, 12 ) == slsong ) ) // Dropping library song into set list.
+  else if( ( dragElem.substring( 0, libsong.length ) == libsong ) &&
+           ( ev.target.id.substring( 0, slsong.length ) == slsong ) ) // Dropping library song into set list.
   {
     var songId = dragElem.substring( 8, );
     var libSong = songLibrary[ songId ];
     var newSong = new SetListSong( libSong.name, libSong.artist );
 
-    var indexes = ev.target.id.substring( 12, ).split( "." );
+    var indexes = ev.target.id.substring( slsong.length, ).split( "." );
     var toSet = parseInt( indexes[ 0 ] );
     var toSongIx = parseInt( indexes[ 1 ] );
 
     curSetList.sets[ toSet ].songs.splice( toSongIx, 0, newSong );
     slEditedFlag = true;
   }
-  else if( ( dragElem.substring( 0, 11 ) == slset ) &&
-           ( ev.target.id.substring( 0, 11 ) == slset ) ) // Moving a set
+  else if( ( dragElem.substring( 0, slset.length ) == slset ) &&
+           ( ev.target.id.substring( 0, slset.length ) == slset ) ) // Moving a set
   {
-    var fromSet = parseInt( dragElem.substring( 11, ) );
-    var toSet = parseInt( ev.target.id.substring( 11, ) );
+    var fromSet = parseInt( dragElem.substring( slset.length, ) );
+    var toSet = parseInt( ev.target.id.substring( slset.length, ) );
 
     if( toSet < fromSet ) // moved set up
     {
@@ -394,20 +394,20 @@ function dropElem( ev )
   }
   else if( ev.target.id == "trashCan" )
   {
-    if( dragElem.substring( 0, 12 ) == slsong )
+    if( dragElem.substring( 0, slsong.length ) == slsong )
     {
-      var indexes = dragElem.substring( 12, ).split( "." );
+      var indexes = dragElem.substring( slsong.length, ).split( "." );
       var delSet = parseInt( indexes[ 0 ] );
       var delSong = parseInt( indexes[ 1 ] );
 
       curSetList.sets[ delSet ].songs.splice( delSong, 1 );
     }
-    else if( dragElem.substring( 0, 11 ) == slset )
+    else if( dragElem.substring( 0, slset.length ) == slset )
     {
-      var delSet = parseInt( dragElem.substring( 11, ) );
+      var delSet = parseInt( dragElem.substring( slset.length, ) );
       curSetList.sets.splice( delSet, 1 );
     }
-    else if( dragElem.substring( 0, 9 ) == "clipboard" )
+    else if( dragElem.substring( 0, cbStr.length ) == cbStr )
       curSetList.sets[ curSetList.sets.length - 1 ].songs = [];
 
     slEditedFlag = true;
@@ -438,7 +438,7 @@ function setClick( setIndex, songIndex )
     cs.css_highlight = !cs.css_highlight;
   else if( operationMode == MODE_MEDLEY )
     cs.medley = !cs.medley;
-  else if( ( operationMode == MODE_CLIPBOARD ) && ( setIndex < curSetList.sets.length - 1 ) )
+  else if( setIndex < curSetList.sets.length - 1 ) // Clipboard
   {
     var song = curSetList.sets[ setIndex ].songs[ songIndex ];
     curSetList.sets[ curSetList.sets.length - 1 ].songs.push( song );
@@ -463,7 +463,7 @@ function libSongClick( songId )
     libEditedFlag = true;
     delete( songLibrary[ songId ] );
   }
-  else if( operationMode == MODE_CLIPBOARD )
+  else // to clipboard
   {
     song = new SetListSong( songLibrary[ songId ].name, songLibrary[ songId ].artist );
     curSetList.sets[ curSetList.sets.length - 1 ].songs.push( song );
@@ -678,7 +678,6 @@ function changeMode( mode )
       case MODE_HIGHLIGHT:  elem = document.getElementById( 'modeHighlightButton' );  break;
       case MODE_EDIT:       elem = document.getElementById( 'modeEditButton' );       break;
       case MODE_DEL_LIB:    elem = document.getElementById( 'modeDelLibButton' );     break;
-      case MODE_CLIPBOARD:  elem = document.getElementById( 'clipboard' );            break;
     }
     elem.classList.add( 'css_highlight' );
   }
@@ -1292,8 +1291,7 @@ Save the set with 'Save'. Edit a saved set with 'Open'.<br>
 The Clipboard is a hidden set that is not displayed in the rendered set list file. It is provided
 to make the set list a bit easier to manage. Songs can be dragged to and from the Clipboard as with
 any other set. The Clipboard can also be dragged into the set to drop its contents.
-In 'Add To Clipboard' mode songs are added to the Clipboard from the Library and cut from the set list
-when you click them. <br>
+Songs are added to the Clipboard from the Library and cut from the set list when you click them. <br>
 <br>
 Songs that are part of a medley can be indicated with 'Medley' mode.<br>
 Songs can be highlighted in red with 'Highlight' mode.<br>
