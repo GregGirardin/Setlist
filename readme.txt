@@ -17,3 +17,4 @@ It assumes the first line is the song name, the next line is blank, and the subs
 lines are lyrics.
 
 setlist.py is the original Python set list generator before the port to Javascript.
+

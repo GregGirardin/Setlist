@@ -624,10 +624,16 @@ function saveSongEdits()
     // Allow html in the lyrics. But replace <br> with CR.
     var foo = document.getElementById( "editSongLyrics" ).innerHTML;
     if( !allowLyricHTML )
-    { // Prune formatting. Try to preserve newlines.
-      foo = foo.replace( /<br>/g, '<br>Q!W@E#' ); // a randomish sequence we can go back and replace with a \n after we clear all html formatting
-      foo = foo.replace( /<\/div>/g, '</div>Q!W@E#' );
-      foo = foo.replace( /<\/p>/g, '</p>Q!W@E#' );
+    { // Prune HTML formatting but try to preserve newlines.
+      // Use a randomish sequence we can go back and replace with a \n after we strip all html formatting.
+
+      // console.log( "1", foo );
+
+      foo = foo.replace( /<div><br><\/div>/g, 'Q!W@E#' ); // Treat this as a single newline
+      foo = foo.replace(    /<br/g, 'Q!W@E#<br' );
+      foo = foo.replace( /<\/div/g, 'Q!W@E#</div' );
+      foo = foo.replace(   /<\/p/g, 'Q!W@E#</p' );
+
       foo = strip( foo ); // Strip HTML formating
       foo = foo.replace( /Q!W@E#/g, '\n' ); // add newlines back
     }
