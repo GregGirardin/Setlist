@@ -627,8 +627,6 @@ function saveSongEdits()
     { // Prune HTML formatting but try to preserve newlines.
       // Use a randomish sequence we can go back and replace with a \n after we strip all html formatting.
 
-      // console.log( "1", foo );
-
       foo = foo.replace( /<div><br><\/div>/g, 'Q!W@E#' ); // Treat this as a single newline
       foo = foo.replace(    /<br/g, 'Q!W@E#<br' );
       foo = foo.replace( /<\/div/g, 'Q!W@E#</div' );
@@ -1384,11 +1382,12 @@ function openSetFile( e )
 /////////////// /////////////// /////////////// /////////////// ///////////////
 function saveSetlist()
 {
+  saveSongEdits();
+
   // Update files in the set that may have had the artist changed in the Library.
   var missingFiles = 0;
   // Songs
   for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
-  {
     for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
     {
       var sng = curSetList.sets[ setIndex ].songs[ songIndex ];
@@ -1413,7 +1412,7 @@ function saveSetlist()
               alert( "Using '" + foundSong.artist + "' version of '" + sng.name + "'" );
             else
               alert( "'" + sng.artist + "' version of '" + sng.name + 
-                    "' not found. Using '" + foundSong.artist + "' version." );
+                     "' not found. Using '" + foundSong.artist + "' version." );
           }
           console.log( "'" + sng.artist + "' version not in lib, found another." );
           sng = new SetListSong( foundSong.name, foundSong.artist );
@@ -1429,7 +1428,6 @@ function saveSetlist()
         }
       }
     }
-  }
 
   var setFile = "<!--\n" + JSON.stringify( curSetList, null, "  " ) + "\n-->\n";
   setFile += "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>\n";
@@ -1491,9 +1489,11 @@ function saveSetlist()
           var nLine = "";
           var numSpaces = 0;
 
-          for( c of line.split( "" ) )
+          var spl = line.split( "" );
+
+          for( c of spl )
           {
-            if( c == " " )
+            if( c.charCodeAt( 0 ) == 32 || c.charCodeAt( 0 ) == 160 ) // " " or &nbsp
               numSpaces += 1;
             else
             {
@@ -1501,7 +1501,8 @@ function saveSetlist()
                 nLine += " ";
               else if( numSpaces > 1 )
                 for( var tmp = 0;tmp < numSpaces;tmp++ )
-                  nLine += "&nbsp"; // replace spaces in the line so the browser doesn't skip it.
+                  nLine += "&nbsp;"; // replace spaces in the line so the browser doesn't skip it.
+              
               numSpaces = 0;
               nLine += c;
             }
