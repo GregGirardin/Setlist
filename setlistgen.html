@@ -932,7 +932,7 @@ function generateLibraryHTML()
 
 /////////////// /////////////// /////////////// ///////////////
 // This are just a couple big string literals for the generated output setlist html.
-// Put here to make the export function more readable
+// Put here to make the export function more readable 
 /////////////// /////////////// /////////////// ///////////////
 function htmlConstStrings( index )
 {
@@ -940,13 +940,12 @@ function htmlConstStrings( index )
   {
     case 0:
       return( function(){/* 
-<style>
+<style type="text/css">
 .accordion
 {
   border: 2px solid white;
   background-color: #def;
   color: #444;
-  cursor: pointer;
   padding: 6px;
   text-align: left;
   outline: none;
@@ -1235,7 +1234,6 @@ function accordionClick( elem, keepOpen=false )
         elem = undefined;
     }
     scrollToElem.scrollIntoView();
-    setTimeout( function() { scrollToElem.scrollIntoView(); }, 500 );
   }
 }
 
@@ -1261,23 +1259,85 @@ for( var i = 0;i < acc.length;i++ )
   acc[ i ].nextElementSibling.addEventListener( "click", function() { this.previousElementSibling.scrollIntoView(); } );
   acc[ i ].accIndex = i;
 }
+
 displaySet( DISPLAY_LARGE );
 
-document.addEventListener( 'keydown', keyHandler );
+// Footswitch stuff for page up/down Font +/-
 
-function keyHandler( e )
+class FootSwitchButton
 {
+  constructor( identifier )
+  {
+    this.buttonID = identifier;
+    this.buttonState = false;
+    this.holdTimerExpired = false;
+  }
+
+  setState( newState )
+  {
+    if( newState != this.buttonState )
+    {
+      this.buttonState = newState;
+
+      if( newState ) // true = 'down'
+      {
+        this.holdTimerExpired = false;
+        this.holdTimer = setTimeout( holdTimerCB, 250, this.buttonID );
+      }
+      else // released. (up)
+      {
+        if( this.holdTimerExpired )
+          this.holdTimerExpired = false;
+        else
+        {
+          clearTimeout( this.holdTimer );
+          this.buttonID == 0 ? console.log( "Song Up" ) : console.log( "Song Down" );
+          changeSong( this.buttonID == 0 ? -1 : 1 ); // tap action
+        }
+      }
+    }
+  }
+
+  holdTimerCB()
+  {
+    this.holdTimerExpired = true;
+    this.buttonID == 0 ? console.log( "Font -" ) : console.log( "Font +" );
+    this.buttonID == 0 ? fontMinus() : fontPlus();
+  }
+}
+
+function holdTimerCB( ButtonID )
+{
+  footSwitchButtons[ ButtonID ].holdTimerCB();
+}
+
+var footSwitchButtons = [];
+footSwitchButtons[ 0 ] = new FootSwitchButton( 0 );
+footSwitchButtons[ 1 ] = new FootSwitchButton( 1 );
+
+function keyHandler( e, state )
+{
+  var ix;
+
   switch( e.code )
   {
     case 'ArrowUp':
-      changeSong( -1 );
-      break;
-
+      ix = 0; break;
     case 'ArrowDown':
-      changeSong( 1 );
-      break;
-    }
+      ix = 1; break;
+
+    default:
+      return;
+  } 
+
+  footSwitchButtons[ ix ].setState( state );
 }
+
+document.addEventListener( 'keydown', keyPressedHandler );
+document.addEventListener( 'keyup',   keyRelHandler );
+
+function keyPressedHandler( e ) { e.preventDefault();keyHandler( e, true ); } // down / pressed
+function keyRelHandler( e ) { e.preventDefault();keyHandler( e, false ); } // up / released
 
 */}.toString().slice( 14, -3 ) + "</" + "script> </" + "body> </html>" ); // little hack because certain tags confuse the browser.
     break;
