@@ -1282,7 +1282,7 @@ class FootSwitchButton
       if( newState ) // true = 'down'
       {
         this.holdTimerExpired = false;
-        this.holdTimer = setTimeout( holdTimerCB, 250, this.buttonID );
+        this.holdTimer = setTimeout( holdTimerCB, 500, this.buttonID );
       }
       else // released. (up)
       {
@@ -1291,7 +1291,7 @@ class FootSwitchButton
         else
         {
           clearTimeout( this.holdTimer );
-          this.buttonID == 0 ? console.log( "Song Up" ) : console.log( "Song Down" );
+          //this.buttonID == 0 ? console.log( "Song Up" ) : console.log( "Song Down" );
           changeSong( this.buttonID == 0 ? -1 : 1 ); // tap action
         }
       }
@@ -1301,7 +1301,7 @@ class FootSwitchButton
   holdTimerCB()
   {
     this.holdTimerExpired = true;
-    this.buttonID == 0 ? console.log( "Font -" ) : console.log( "Font +" );
+    //this.buttonID == 0 ? console.log( "Font -" ) : console.log( "Font +" );
     this.buttonID == 0 ? fontMinus() : fontPlus();
   }
 }
