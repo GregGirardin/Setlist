@@ -241,7 +241,6 @@ class SetListSong
   constructor( name, artist )
   {
     this.name = name; // name and artist are key to find in library
-    console.log( artist );
     this.artist = artist;
     this.id = this.name + '.' + this.artist;
     this.id = this.id.replace( / /g, "_" );
@@ -574,7 +573,7 @@ function generateSetlistHTML()
     }
 
     var tmpStr = ( curSetList.sets[ i ].songs.length == 0 ) ? 'Drop Songs Here' : '&nbsp+&nbsp';
-    tempHtml += "<button id='setListSong." + i + "." + j + "' class='css_setListSong' onclick='setClick( " + i + ", " + j + " )'" +
+    tempHtml += "<button id='setListSong." + i + "." + j + "' class='css_setListSong'" +
                 "  ondrop='dropElem( event )' ondragover='sl_allowDrop( event )' ondragstart='dragElem( event )'>" + tmpStr + "</button>\n";
 
     if( s.songs.length )
