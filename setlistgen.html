@@ -224,7 +224,7 @@ var operationMode = MODE_NONE;
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name="", artist="?", key="?", lyrics="" )
+  constructor( name="Name", artist="Artist", key="Key", lyrics="Lyrics", tempo="Tempo" )
   {
     this.name = name;
     this.artist = artist;
@@ -233,6 +233,7 @@ class LibrarySong
     this.id = this.id.replace( /'/g, "_" ); 
     this.lyrics = lyrics;
     this.key = key;
+    this.tempo = tempo;
   }
 }
 
@@ -563,7 +564,7 @@ function generateSetlistHTML()
          break;
 
         case VIEW_MODE_KEY:
-          displayName = songLibrary[ s.songs[ j ].id ].key;
+          displayName = songLibrary[ s.songs[ j ].id ].key + " / " + songLibrary[ s.songs[ j ].id ].tempo;
           break;
       }
 
@@ -619,6 +620,8 @@ function saveSongEdits()
     key = key.replace( /(<([^>]+)>)/gi, "" );
     if( key == "Key" )
       key = "";
+    
+    var tempo = document.getElementById( "editSongTempo" ).value;
 
     // Allow html in the lyrics. But replace <br> with CR.
     var foo = document.getElementById( "editSongLyrics" ).innerHTML;
@@ -634,7 +637,7 @@ function saveSongEdits()
       foo = strip( foo ); // Strip HTML formating
       foo = foo.replace( /Q!W@E#/g, '\n' ); // add newlines back
     }
-    var editedSong = new LibrarySong( name, artist, key, foo );
+    var editedSong = new LibrarySong( name, artist, key, foo, tempo );
     if( editedSong.id != "." ) // That's the default name when adding, don't add.
     {
       // Check for a change before setting libEditedFlag.
@@ -820,6 +823,9 @@ function saveLibrary()
 
 function pruneQuote( convString )
 {
+  if( !convString )
+    return undefined;
+
   var newString = "";
 
   for( var i = 0;i < convString.length;i++ )
@@ -841,25 +847,20 @@ function generateLibraryHTML()
   {
     var tmpHtml = "<hr>";
     var songName = pruneQuote( editSong.name );
-    if( !songName )
-      songName = "Name";
-    var artist = editSong.artist;
-    if( !artist )
-      artist = "Artist";
-    else
-      artist = pruneQuote( artist ); // for strings with apostophes
-
-    var key = editSong.key;
-    if( !key )
-      key = "Key";
-    else
-      key = pruneQuote( key );
+    var artist = pruneQuote( editSong.artist );
+    var key = pruneQuote( editSong.key );
+    var tempo = editSong.tempo;
 
     tmpHtml += "<input contenteditable='true' id='editSongName'   value='" + songName + "'>\
                 <input contenteditable='true' id='editSongArtist' value='" + artist + "'>\
-                <input contenteditable='true' id='editSongKey'    value='" + key + "'>"; 
+                <input contenteditable='true' id='editSongKey'    value='" + key + "'>\
+                <input contenteditable='true' id='editSongTempo'  value='" + tempo + "'>"; 
 
-    var lyrics = editSong.lyrics.replace( /\n/g, "<br>" );
+    var lyrics = editSong.lyrics;
+    if( lyrics )
+      lyrics = lyrics.replace( /\n/g, "<br>" );
+    else
+      lyrics = "";
     tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
 
     var elem = document.getElementById( 'multiuse' ); // edit in the multiuse panel on the left
