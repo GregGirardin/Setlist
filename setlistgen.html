@@ -628,15 +628,20 @@ function saveSongEdits()
     if( !allowLyricHTML )
     { // Prune HTML formatting but try to preserve newlines.
       // Use a randomish sequence we can go back and replace with a \n after we strip all html formatting.
+      //console.log ("Phase 1"); console.log( foo );
 
-      foo = foo.replace( /<div><br><\/div>/g, 'Q!W@E#' ); // Treat this as a single newline
-      foo = foo.replace(    /<br/g, 'Q!W@E#<br' );
-      foo = foo.replace( /<\/div/g, 'Q!W@E#</div' );
-      foo = foo.replace(   /<\/p/g, 'Q!W@E#</p' );
+      //foo = foo.replace( /<div><br><\/div>/g, 'Q!W@E#' ); // Treat this as a single newline
+      //foo = foo.replace(    /<br/g, 'Q!W@E#<br' );
+      //foo = foo.replace( /<\/div/g, 'Q!W@E#</div' );
+      //foo = foo.replace(   /<\/p/g, 'Q!W@E#</p' );
+
+      foo = foo.replace( /<div>/g, '\n' );
+      foo = foo.replace( /<br>/g,  '\n' );
 
       foo = strip( foo ); // Strip HTML formating
-      foo = foo.replace( /Q!W@E#/g, '\n' ); // add newlines back
+      //foo = foo.replace( /Q!W@E#/g, '\n' ); // add newlines back
     }
+
     var editedSong = new LibrarySong( name, artist, key, foo, tempo );
     if( editedSong.id != "." ) // That's the default name when adding, don't add.
     {
