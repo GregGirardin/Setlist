@@ -430,6 +430,9 @@ The lyrics panel innerhtml
 
 function saveSongEdits()
 {
+  if( !document.getElementById( "editSongName" ) )
+    return;
+  
   if( editSong )
   {
     delete( songLibrary[ editSong.id ] );
