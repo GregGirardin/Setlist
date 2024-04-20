@@ -26,7 +26,7 @@ var operationMode = MODE_NONE;
 //////////////////////////// //////////////////////////// ////////////////////////////
 class LibrarySong
 {
-  constructor( name="Name", artist="Artist", key="Key", lyrics="Lyrics", tempo="Tempo" )
+  constructor( name = "Name", artist = "Artist", key = "Key", lyrics = "Lyrics", tempo = "Tempo" )
   {
     this.name = name;
     this.artist = artist;
@@ -428,7 +428,6 @@ The lyrics panel innerhtml
 
 */
 
-
 function saveSongEdits()
 {
   if( editSong )
@@ -452,29 +451,14 @@ function saveSongEdits()
     
     var tempo = document.getElementById( "editSongTempo" ).value;
 
-    // Prune HTML formatting by taking innerText.
+    // Prune HTML formatting by taking innerText. Still leaves extra newlines.
     var foo = document.getElementById( "editSongLyrics" ).innerText;
 
-    /*
-    var dbg = true;
-    if( dbg ) { console.log( "Initial innerHTML" ); console.log( fooIH );
-                console.log( "\ninnerText" ); console.log( foo.innerText );  }
-
-    fooIH = fooIH.replace( /<div/g, '\n<div' ); // when editing in the innerHTML, the browser may use <div></div> for newlines, sometimes just <br> 
-    //foo = foo.replace( /<\/div/g, '\n</div' ); // end of a div ends the line and paragraph
-    fooIH = fooIH.replace( /<br/g,  '\n<br' ); // catch <br foobar> tags, not just vanilla "<br>"
-    if( dbg ) { console.log( "Replaced" ); console.log( fooIH ); }
-
-    foo = strip( fooIH ); // Strip HTML formating
-    if( dbg ) { console.log( "Final" ); console.log( fooIH ); 
-                console.log( "\ninnerText" ); console.log( fooIH.innerText ); }
-    */
-
-    var editedSong = new LibrarySong( name, artist, key, foo, tempo );
-    if( editedSong.id != "." ) // That's the default name when adding, don't add.
+    editSong = new LibrarySong( name, artist, key, foo, tempo );
+    if( editSong.id != "." ) // That's the default name when adding, don't add.
     {
       // Check for a change before setting libEditedFlag.
-      songLibrary[ editedSong.id ] = editedSong;
+      songLibrary[ editSong.id ] = editSong;
       libEditedFlag = true;
     }
   }
@@ -491,7 +475,10 @@ function changeMode( mode )
     document.getElementById( 'multiuse' ).innerHTML = "";
   }
 
-  editSong = undefined;
+  // Normally don't null out editSong so we can lick on Edit again and bring up the the 
+  // previous song. Useful so we can verify formatting.
+  if( mode == MODE_DEL_LIB )
+    editSong = undefined;
   operationMode = ( mode == operationMode ) ? MODE_NONE : mode;
 
   // Adding a song to the library. Create an empty one and change to MODE_EDIT
@@ -501,12 +488,12 @@ function changeMode( mode )
     operationMode = MODE_EDIT;
   }
 
-  var buttons = document.getElementsByClassName( 'css_modeButton' );
-  for( i = 0;i < buttons.length;i++ )
-    buttons[ i ].classList.remove( 'css_highlight' );
+  let buttons = document.getElementsByClassName( 'css_modeButton' );
+  for( let button of buttons )
+    button.classList.remove( 'css_highlight' );
   buttons = document.getElementsByClassName( 'css_menuButton' );
-  for( i = 0;i < buttons.length;i++ )
-    buttons[ i ].classList.remove( 'css_highlight' );
+  for( let button of buttons )
+    button.classList.remove( 'css_highlight' );
 
   if( operationMode != MODE_NONE )
   {
@@ -690,10 +677,7 @@ function generateLibraryHTML()
                 <input contenteditable='true' id='editSongTempo'  value='" + tempo + "'>"; 
 
     var lyrics = editSong.lyrics;
-    if( lyrics )
-      lyrics = lyrics.replace( /\n/g, "<br>" );
-    else
-      lyrics = "";
+    lyrics = lyrics ? lyrics.replace( /\n/g, "<br>" ) : "";
     tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
 
     var elem = document.getElementById( 'multiuse' ); // edit in the multiuse panel on the left
