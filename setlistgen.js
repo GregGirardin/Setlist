@@ -71,7 +71,7 @@ class SetList
     this.name = name;
     this.sets = [];
     this.sets.push( new Set() );
-    this.sets.push( new Set( "Clipboard") );
+    this.sets.push( new Set( "Clipboard" ) );
   }
 }
 
@@ -430,40 +430,37 @@ The lyrics panel innerhtml
 
 function saveSongEdits()
 {
-  if( !document.getElementById( "editSongName" ) )
+  if( ( !document.getElementById( "editSongName" ) ) || !editSong )
     return;
+
+  delete( songLibrary[ editSong.id ] );
+
+  var name = document.getElementById( "editSongName" ).value; // strip HTML tags in the name and artist
+  name = name.replace( /(<([^>]+)>)/gi, "" );
+  if( name == pruneQuote( editSong.name ) )
+    name = editSong.name; // name didn't really change. don't lose the apostrophes.
+  var artist = document.getElementById( "editSongArtist" ).value;
+  artist = artist.replace( /(<([^>]+)>)/gi, "" );
+  if( artist == pruneQuote( editSong.artist ) )
+    artist = editSong.artist; // name didn't really change. don't lose the apostrophes.
+  if( artist == "Artist" ) // We put this value in the field if it's empty
+    artist = "";           // but we don't actually want to use it.
+  var key = document.getElementById( "editSongKey" ).value;
+  key = key.replace( /(<([^>]+)>)/gi, "" );
+  if( key == "Key" )
+    key = "";
   
-  if( editSong )
+  var tempo = document.getElementById( "editSongTempo" ).value;
+
+  // Prune HTML formatting by taking innerText. Still leaves extra newlines.
+  var foo = document.getElementById( "editSongLyrics" ).innerText;
+
+  editSong = new LibrarySong( name, artist, key, foo, tempo );
+  if( editSong.id != "." ) // That's the default name when adding, don't add.
   {
-    delete( songLibrary[ editSong.id ] );
-
-    var name = document.getElementById( "editSongName" ).value; // strip HTML tags in the name and artist
-    name = name.replace( /(<([^>]+)>)/gi, "" );
-    if( name == pruneQuote( editSong.name ) )
-      name = editSong.name; // name didn't really change. don't lose the apostrophes.
-    var artist = document.getElementById( "editSongArtist" ).value;
-    artist = artist.replace( /(<([^>]+)>)/gi, "" );
-    if( artist == pruneQuote( editSong.artist ) )
-      artist = editSong.artist; // name didn't really change. don't lose the apostrophes.
-    if( artist == "Artist" ) // We put this value in the field if it's empty
-      artist = "";           // but we don't actually want to use it.
-    var key = document.getElementById( "editSongKey" ).value;
-    key = key.replace( /(<([^>]+)>)/gi, "" );
-    if( key == "Key" )
-      key = "";
-    
-    var tempo = document.getElementById( "editSongTempo" ).value;
-
-    // Prune HTML formatting by taking innerText. Still leaves extra newlines.
-    var foo = document.getElementById( "editSongLyrics" ).innerText;
-
-    editSong = new LibrarySong( name, artist, key, foo, tempo );
-    if( editSong.id != "." ) // That's the default name when adding, don't add.
-    {
-      // Check for a change before setting libEditedFlag.
-      songLibrary[ editSong.id ] = editSong;
-      libEditedFlag = true;
-    }
+    // Check for a change before setting libEditedFlag.
+    songLibrary[ editSong.id ] = editSong;
+    libEditedFlag = true;
   }
 }
 
@@ -1255,6 +1252,39 @@ function openSetFile( e )
   }
 
   reader.readAsText( file );
+}
+
+/////////////// /////////////// /////////////// /////////////// ///////////////
+// Generate the Setlist names as a text file and present a dialog for the user to save it.
+// No lyrics are present, this is just to facilitate printing out a set list.
+/////////////// /////////////// /////////////// /////////////// ///////////////
+function exportSetText()
+{
+  var fileText = "";
+
+  fileText += curSetList.name + '\n\n';
+
+  for( var setIndex = 0;setIndex < curSetList.sets.length - 1;setIndex++ ) // Note that we don't render the clipboard set
+  {
+    fileText += curSetList.sets[ setIndex ].name + '\n';
+
+    for( var songIndex = 0;songIndex < curSetList.sets[ setIndex ].songs.length;songIndex++ )
+      fileText += curSetList.sets[ setIndex ].songs[ songIndex ].name + '\n';
+
+    fileText += '\n';
+  }
+
+   // Provide URL for abuser to download it.
+   const a = document.createElement( 'a' );
+   const file = new Blob( [ fileText ], { type: 'text/plain' } );
+   
+   a.href = URL.createObjectURL( file );
+   a.download = curSetList.name + ".txt";
+   a.click();
+ 
+   URL.revokeObjectURL( a.href );
+
+  // console.log( fileText );
 }
 
 /////////////// /////////////// /////////////// /////////////// ///////////////
