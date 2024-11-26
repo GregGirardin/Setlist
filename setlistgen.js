@@ -24,9 +24,15 @@ const VIEW_MODE_KEY         = 3;
 var operationMode = MODE_NONE;
 
 //////////////////////////// //////////////////////////// ////////////////////////////
+const defaultName = "Name";
+const defaultArtist = "Artist";
+const defaultKey = "Key";
+const defaultLyrics = "Lyrics";
+const defaultTempo = "Tempo";
+
 class LibrarySong
 {
-  constructor( name = "Name", artist = "Artist", key = "Key", lyrics = "Lyrics", tempo = "Tempo" )
+  constructor( name = defaultName, artist = defaultArtist, key = defaultKey, lyrics = defaultLyrics, tempo = defaultTempo )
   {
     this.name = name;
     this.artist = artist;
@@ -671,14 +677,24 @@ function generateLibraryHTML()
     var key = pruneQuote( editSong.key );
     var tempo = editSong.tempo;
 
-    tmpHtml += "<input contenteditable='true' id='editSongName'   value='" + songName + "'>\
-                <input contenteditable='true' id='editSongArtist' value='" + artist + "'>\
-                <input contenteditable='true' id='editSongKey'    value='" + key + "'>\
-                <input contenteditable='true' id='editSongTempo'  value='" + tempo + "'>"; 
+    tmpHtml += `<input contenteditable='true' id='editSongName'   value='${songName}'\
+                 onfocus="if(this.value=='${defaultName}'){this.value='';}"\
+                 onblur="if(this.value==''){this.value='${defaultName}';}">\
+                <input contenteditable='true' id='editSongArtist' value='${artist}'\
+                 onfocus="if(this.value=='${defaultArtist}'){this.value='';}"\
+                 onblur="if(this.value==''){this.value='${defaultArtist}';}">\
+                <input contenteditable='true' id='editSongKey'    value='${key}'\
+                 onfocus="if(this.value=='${defaultKey}'){this.value='';}"\
+                 onblur="if(this.value==''){this.value='${defaultKey}';}">\
+                <input contenteditable='true' id='editSongTempo'  value='${tempo}'\
+                 onfocus="if(this.value=='${defaultTempo}'){this.value='';}"\
+                 onblur="if(this.value==''){this.value='${defaultTempo}';}">`;
 
     var lyrics = editSong.lyrics;
     lyrics = lyrics ? lyrics.replace( /\n/g, "<br>" ) : "";
-    tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong'>" + lyrics + "</div>";
+    tmpHtml += "<br><div contenteditable='true' id='editSongLyrics' class='css_editSong' \
+                value='" + lyrics + "' data-plchldr='" + defaultLyrics + "'></div>\
+                <style>[id='editSongLyrics']:empty:not(:focus):before {content:attr(data-plchldr)}</style>";
 
     var elem = document.getElementById( 'multiuse' ); // edit in the multiuse panel on the left
     elem.innerHTML = tmpHtml;
